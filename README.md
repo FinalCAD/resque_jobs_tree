@@ -1,4 +1,4 @@
-# ResqueJobsTree
+# ResqueJobsTree -- Resque jobs as a tree
 
 To manage complexe background job processes, this gem simplify the task of creating
 sequences of [Resque](https://github.com/resque/resque) jobs by putting them into a tree.

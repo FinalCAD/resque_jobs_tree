@@ -1,4 +1,4 @@
-Copyright (c) 2013 Antoine Qu'hen
+Copyright (c) 2013 FinalCAD
 
 MIT License
 
