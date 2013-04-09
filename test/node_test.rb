@@ -65,4 +65,46 @@ class NodeTest < MiniTest::Unit::TestCase
     assert_equal @tree.jobs.first, ['tree1', 'node2', 1, 2, 3]
   end
 
+  def test_childs_validation
+    assert_raises ResqueJobsTree::NodeInvalid do
+      ResqueJobsTree::Factory.create :tree1 do
+        root :job1 do
+          perform {}
+          childs {}
+        end
+      end
+    end
+    ResqueJobsTree::Factory.create :tree1 do
+      root :job1 do
+        perform {}
+      end
+    end
+  end
+
+  def test_perform_validation
+    assert_raises ResqueJobsTree::NodeInvalid do
+      ResqueJobsTree::Factory.create :tree1 do
+        root :job1 do
+        end
+      end
+    end
+  end
+
+  def test_perform_validation
+    assert_raises ResqueJobsTree::NodeInvalid do
+      ResqueJobsTree::Factory.create :tree1 do
+        root :job1 do
+          perform {}
+          childs {}
+          node :job2 do
+            perform {}
+          end
+          node :job2 do
+            perform {}
+          end
+        end
+      end
+    end
+  end
+
 end

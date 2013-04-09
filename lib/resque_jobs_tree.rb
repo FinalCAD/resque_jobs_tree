@@ -9,4 +9,7 @@ require 'resque_jobs_tree/resources_serializer'
 require 'resque_jobs_tree/storage'
 
 module ResqueJobsTree
+  class TreeInvalid < Exception ; end
+  class NodeInvalid < Exception ; end
+  class JobNotUniq  < Exception ; end
 end

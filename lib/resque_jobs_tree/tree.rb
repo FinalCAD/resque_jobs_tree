@@ -28,6 +28,15 @@ class ResqueJobsTree::Tree
     root.find_node_by_name name.to_s
   end
 
+  def validate!
+    raise(ResqueJobsTree::TreeInvalid, "`#{name}` has no root node") unless @root
+    root.validate!
+  end
+
+  def nodes
+    [root, root.nodes].flatten
+  end
+
   private
 
   def enqueue_leaves_jobs

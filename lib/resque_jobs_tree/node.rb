@@ -60,4 +60,24 @@ class ResqueJobsTree::Node
     node_childs.detect{ |node| node.find_node_by_name _name }
   end
 
+  def validate!
+    if childs.kind_of?(Proc) && node_childs.empty?
+      raise ResqueJobsTree::NodeInvalid,
+        "node `#{name}` from tree `#{tree.name}` defines childs without child nodes"
+    end
+    unless perform.kind_of? Proc
+      raise ResqueJobsTree::NodeInvalid,
+        "node `#{name}` from tree `#{tree.name}` has no perform block"
+    end
+    if (tree.nodes - [self]).map(&:name).include? name
+      raise ResqueJobsTree::NodeInvalid,
+        "node name `#{name}` is already taken in tree `#{tree.name}`"
+    end
+    node_childs.each &:validate!
+  end
+
+  def nodes
+    node_childs+node_childs.map(&:nodes)
+  end
+
 end

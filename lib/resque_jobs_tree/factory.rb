@@ -8,6 +8,7 @@ module ResqueJobsTree::Factory
     ResqueJobsTree::Tree.new(name).tap do |tree|
       @trees << tree
       tree.instance_eval &block
+      tree.validate!
     end
   end
 

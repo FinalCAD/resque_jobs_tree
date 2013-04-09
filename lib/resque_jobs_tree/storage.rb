@@ -9,7 +9,10 @@ module ResqueJobsTree::Storage
     parent_key = key parent, parent_resources
     Resque.redis.hset PARENTS_KEY, node_key, parent_key
     childs_key = childs_key parent, parent_resources
-    Resque.redis.sadd childs_key, node_key
+    unless Resque.redis.sadd childs_key, node_key
+      raise ResqueJobsTree::JobNotUniq,
+        "Job #{parent.name} already has the child #{node.name} with resources: #{resources}"
+    end
   end
 
   def remove node, resources

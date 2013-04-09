@@ -54,7 +54,13 @@ This code is defining the tree, then when it launches the sequence of jobs, it:
 * stokcs in Redis the childhood relationsips between them.
 * enqueues in Resque the jobs which are the leaves of the tree
 
-The rule: the name of a tree of jobs should be uniq, and the name of a node should be uniq in a scope of a tree.
+Limitations:
+
+* the name of a tree of jobs should be uniq
+* the name of a node should be uniq in a scope of a tree.
+* the running jobs are identified by a their tree, their name and their resources.
+So they should not overlap. In other words, for the same node,
+you can't enqueue 2 times `[:mail, User.first]`
 
 ## Contributing
 

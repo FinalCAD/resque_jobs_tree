@@ -3,25 +3,7 @@ require 'test_helper'
 class StorageTest < MiniTest::Unit::TestCase
 
 	def setup
-    @tree = ResqueJobsTree::Factory.create :tree1 do
-      root :job1 do
-        perform do |*args|
-          puts 'FactoryTest job1'
-        end
-        childs do |resources|
-          [].tap do |childs|
-            3.times do
-              childs << [:job2, resources.last]
-            end
-          end
-        end
-        node :job2 do
-          perform do |*args|
-            puts 'FactoryTest job2'
-          end
-        end
-      end
-    end
+		create_tree
 		@resources = [1, 2, 3]
 		@root = @tree.find_node_by_name(:job1)
 		@leaf = @tree.find_node_by_name(:job2)
@@ -49,6 +31,23 @@ class StorageTest < MiniTest::Unit::TestCase
 			variable = 2
 		end
 		assert_equal 2, variable
+	end
+
+	def test_store_already_stored
+		wrong_tree = ResqueJobsTree::Factory.create :tree1 do
+      root :job1 do
+        perform {}
+        childs do |resources|
+					[ [:job2], [:job2] ]
+        end
+        node :job2 do
+          perform {}
+        end
+      end
+    end
+		assert_raises ResqueJobsTree::JobNotUniq do
+			wrong_tree.launch
+		end
 	end
 
 	private

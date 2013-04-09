@@ -3,25 +3,7 @@ require 'test_helper'
 class TreeTest < MiniTest::Unit::TestCase
 
   def setup
-    @tree = ResqueJobsTree::Factory.create :tree1 do
-      root :job1 do
-        perform do |*args|
-          # puts 'TreeTest job1'
-        end
-        childs do |resources|
-          [].tap do |childs|
-            3.times do
-              childs << [:job2, resources.last]
-            end
-          end
-        end
-        node :job2 do
-          perform do |*args|
-            # puts 'TreeTest job2'
-          end
-        end
-      end
-    end
+    create_tree
   end
 
   def test_name
@@ -49,6 +31,19 @@ class TreeTest < MiniTest::Unit::TestCase
   def test_launch
     resources = [1, 2, 3]
     @tree.launch *resources
+    history = ['tree1 job2']*3+['tree1 job1']
+    assert_equal history, redis.lrange('history', 0, -1)
+  end
+
+  def test_launch_with_no_resources
+    @tree.launch
+  end
+
+  def test_should_have_root
+    assert_raises ResqueJobsTree::TreeInvalid do
+      ResqueJobsTree::Factory.create :tree1 do
+      end
+    end
   end
 
 end
