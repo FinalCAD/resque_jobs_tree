@@ -1,0 +1,68 @@
+require 'test_helper'
+
+class NodeTest < MiniTest::Unit::TestCase
+
+  def setup
+    @tree = ResqueJobsTree::Tree.new :tree1
+    @root = ResqueJobsTree::Node.new :node1, @tree
+    @leaf = ResqueJobsTree::Node.new :node2, @tree, @root
+  end
+
+  def test_ressources
+    variable = 1
+    @root.resources do |n|
+      variable = n
+    end
+    @root.resources.call 2
+    assert_equal variable, 2
+  end
+
+  def test_perform
+    variable = 1
+    @root.perform do |n|
+      variable = n
+    end
+    @root.perform.call 2
+    assert_equal variable, 2
+  end
+
+  def test_childs
+    variable = 1
+    @leaf.childs do |n|
+      variable = n
+    end
+    @leaf.childs.call 2
+    assert_equal variable, 2
+  end
+
+  def test_node
+    node3 = @root.node :node3
+    assert_equal @root.find_node_by_name('node3').object_id, node3.object_id
+  end
+
+  def test_leaf
+    resources = []
+    assert @leaf.leaf?(resources)
+    @root.childs do |resources|
+      [:node2, resources]
+    end
+    assert !@root.leaf?(resources)
+  end
+
+  def test_root
+    assert @root.root?
+    assert !@leaf.root?
+  end
+
+  def test_siblings
+    node3 = ResqueJobsTree::Node.new :node3, @tree, @root
+    assert @leaf.siblings, [node3]
+  end
+
+  def test_launch
+    resources = [1, 2, 3]
+    @leaf.launch resources, resources
+    assert_equal @tree.jobs.first, ['tree1', 'node2', 1, 2, 3]
+  end
+
+end
