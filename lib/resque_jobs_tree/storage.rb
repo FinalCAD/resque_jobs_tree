@@ -4,7 +4,7 @@ module ResqueJobsTree::Storage
 
   PARENTS_KEY = "JobsTree:Node:Parents" 
 
-  def store node, resources, parent=nil, parent_resources=nil
+  def store node, resources, parent, parent_resources
     node_key = key node, resources
     parent_key = key parent, parent_resources
     Resque.redis.hset PARENTS_KEY, node_key, parent_key

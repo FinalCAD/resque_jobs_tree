@@ -25,7 +25,7 @@ class ResqueJobsTree::Tree
   end
 
   def find_node_by_name name
-    root.find_node_by_name name
+    root.find_node_by_name name.to_s
   end
 
   private
