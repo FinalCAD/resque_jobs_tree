@@ -1,12 +1,13 @@
 class ResqueJobsTree::Node
 
-  attr_accessor :tree, :parent, :name, :node_childs
+  attr_accessor :tree, :parent, :name, :node_childs, :options
 
   def initialize name, tree, parent=nil
     @tree        = tree
     @name        = name.to_s
     @parent      = parent
     @node_childs = []
+    @options     = {}
   end
 
   def resources &block
@@ -22,8 +23,9 @@ class ResqueJobsTree::Node
   end
 
   # Defines a child node.
-  def node name, &block
+  def node name, options={}, &block
     ResqueJobsTree::Node.new(name, tree, self).tap do |node|
+      node.options = options
       @node_childs << node
       node.instance_eval(&block) if block_given?
     end
@@ -47,7 +49,7 @@ class ResqueJobsTree::Node
       ResqueJobsTree::Storage.store self, resources, parent, parent_resources
     end
     if node_childs.empty?
-      @tree.enqueue name, *resources
+      @tree.enqueue(name, *resources) unless options[:async]
     else
       childs.call(resources).each do |name, *child_resources|
         find_node_by_name(name).launch child_resources, resources

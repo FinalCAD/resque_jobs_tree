@@ -31,8 +31,12 @@ end
 class ResqueJobsTree::Job
   class << self
     def perform_with_hook *args
-      perform_without_hook *args
-      after_perform_enqueue_parent *args
+      begin
+        perform_without_hook *args
+        after_perform_enqueue_parent *args
+      rescue => exception
+        on_failure_cleanup exception, *args
+      end
     end
     alias_method :perform_without_hook, :perform
     alias_method :perform, :perform_with_hook

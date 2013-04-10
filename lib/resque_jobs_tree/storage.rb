@@ -23,8 +23,16 @@ module ResqueJobsTree::Storage
     end
   end
 
+  def cleanup node, resources, option={}
+    cleanup_childs node, resources
+    unless node.root?
+      remove_from_siblings node, resources
+      option[:global] ?  cleanup_parent(node, resources) : remove_parent_key(node, resources)
+    end
+  end
+
   def parent_job_args node, resources
-    JSON.load parent_key(node, resources).gsub(/JobsTree:Node:/, '')
+    args_from_key parent_key(node, resources)
   end
 
   private
@@ -60,6 +68,38 @@ module ResqueJobsTree::Storage
     yield
   ensure
     Resque.redis.del key
+  end
+
+  def cleanup_childs *node_info
+    key = childs_key *node_info
+    Resque.redis.smembers(key).each do |child_key|
+      cleanup *node_info_from_key(child_key)
+    end
+    Resque.redis.del key
+  end
+
+  def cleanup_parent *node_info
+    parent, parent_resources = node_info_from_key(parent_key(*node_info))
+    remove_parent_key *node_info
+    cleanup parent, parent_resources
+  end
+
+  def remove_parent_key *node_info
+    Resque.redis.hdel PARENTS_KEY, key(*node_info)
+  end
+
+  def remove_from_siblings *node_info
+    Resque.redis.srem siblings_key(*node_info), key(*node_info)
+  end
+
+  def args_from_key key
+    JSON.load key.gsub(/JobsTree:Node:/, '')
+  end
+
+  def node_info_from_key key
+    tree_name, node_name, resources = args_from_key(key)
+    node = ResqueJobsTree::Factory.find_tree_by_name(tree_name).find_node_by_name(node_name)
+    [node, resources]
   end
 
 end

@@ -107,4 +107,48 @@ class NodeTest < MiniTest::Unit::TestCase
     end
   end
 
+  def test_options
+    create_async_tree
+    options = { async: true }
+    assert_equal options, @tree.find_node_by_name(:job2).options
+  end
+
+  def test_launch_async
+    create_async_tree
+    resources = [1, 2, 3]
+    @tree.launch resources
+    assert @tree.jobs.empty?
+  end
+
+  def test_launch_continue_on_failure
+    tree = ResqueJobsTree::Factory.create :tree1 do
+      root :job1 do
+        perform { raise 'an unexpected failure' }
+        childs { [:job2] }
+        node :job2, continue_on_failure: true do
+          perform { raise 'an expected failure' }
+        end
+      end
+    end
+    resources = [1, 2, 3]
+    assert_raises RuntimeError, 'an unexpected failure' do
+      tree.launch resources
+    end
+    assert_equal [], Resque.keys
+  end
+
+  private
+
+  def create_async_tree
+    @tree = ResqueJobsTree::Factory.create :tree1 do
+      root :job1 do
+        perform { raise 'should not arrive here' }
+        childs { [:job2] }
+        node :job2, async: true do
+          perform {}
+        end
+      end
+    end
+  end
+
 end
