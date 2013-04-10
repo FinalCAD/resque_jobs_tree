@@ -82,4 +82,8 @@ class ResqueJobsTree::Node
     node_childs+node_childs.map(&:nodes)
   end
 
+  def inspect
+    "<ResqueJobsTree::Node @name=#{name}>"
+  end
+
 end

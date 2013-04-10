@@ -50,6 +50,21 @@ class StorageTest < MiniTest::Unit::TestCase
 		end
 	end
 
+	def test_node_info_from_key
+		key = %Q{ResqueJobsTree:Node:["tree1","job1",1,2,3]}
+		result = [@root, [1, 2, 3]]
+		assert_equal result, ResqueJobsTree::Storage.send(:node_info_from_key, key)
+	end
+
+	def test_track_launch
+		resources = [1, 2, 3]
+		ResqueJobsTree::Storage.track_launch(@tree, resources) {}
+		key = ResqueJobsTree::Storage::LAUNCHED_TREES
+    assert_equal [[@tree.name, resources].to_json], redis.smembers(key)
+		ResqueJobsTree::Storage.release_launch(@tree, resources)
+    assert_equal [], redis.smembers(key)
+	end
+
 	private
 
 	def store

@@ -9,7 +9,7 @@ class JobTest < MiniTest::Unit::TestCase
 
 	def test_tree_node_and_resources
 		result = [@tree.find_node_by_name('job1'), [1, 2, 3]]
-		assert_equal result, ResqueJobsTree::Job.send(:tree_node_and_resources, @args)
+		assert_equal result, ResqueJobsTree::Job.send(:node_and_resources, @args)
 	end
 
 end

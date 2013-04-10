@@ -15,8 +15,10 @@ class ResqueJobsTree::Tree
   end
 
   def launch *resources
-    @root.launch resources
-    enqueue_leaves_jobs
+    ResqueJobsTree::Storage.track_launch self, resources do
+      @root.launch resources
+      enqueue_leaves_jobs
+    end
   end
 
   def enqueue *job_args
@@ -35,6 +37,10 @@ class ResqueJobsTree::Tree
 
   def nodes
     [root, root.nodes].flatten
+  end
+
+  def inspect
+    "<ResqueJobsTree::Tree @name=#{name}>"
   end
 
   private

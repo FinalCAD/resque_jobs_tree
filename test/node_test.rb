@@ -137,6 +137,40 @@ class NodeTest < MiniTest::Unit::TestCase
     assert_equal [], Resque.keys
   end
 
+  def test_leaf_failure
+    tree = ResqueJobsTree::Factory.create :tree1 do
+      root :job1 do
+        perform {}
+        childs { [:job2] }
+        node :job2 do
+          perform { raise 'an unexpected failure' }
+        end
+      end
+    end
+    resources = [1, 2, 3]
+    assert_raises RuntimeError, 'an unexpected failure' do
+      tree.launch *resources
+    end
+    assert_equal [], Resque.keys
+  end
+
+  def test_root_failure
+    tree = ResqueJobsTree::Factory.create :tree1 do
+      root :job1 do
+        perform { raise 'an unexpected failure' }
+        childs { [:job2] }
+        node :job2 do
+          perform {}
+        end
+      end
+    end
+    resources = [1, 2, 3]
+    assert_raises RuntimeError, 'an unexpected failure' do
+      tree.launch resources
+    end
+    assert_equal [], Resque.keys
+  end
+
   private
 
   def create_async_tree

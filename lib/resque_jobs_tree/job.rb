@@ -3,15 +3,17 @@ class ResqueJobsTree::Job
   class << self
 
     def perform *args
-      node, resources = tree_node_and_resources(args)
+      node, resources = node_and_resources(args)
       node.perform.call resources
     end
 
     private
 
     def after_perform_enqueue_parent *args
-      node, resources = tree_node_and_resources(args)
-      unless node.root?
+      node, resources = node_and_resources(args)
+      if node.root?
+        ResqueJobsTree::Storage.release_launch node.tree, resources
+      else
         ResqueJobsTree::Storage.remove(node, resources) do
           parent_job_args = ResqueJobsTree::Storage.parent_job_args node, resources
           Resque.enqueue_to node.tree.name, ResqueJobsTree::Job, *parent_job_args
@@ -20,20 +22,20 @@ class ResqueJobsTree::Job
     end
 
     def on_failure_cleanup exception, *args
-      node, resources = tree_node_and_resources args
+      node, resources = node_and_resources args
       if node.options[:continue_on_failure]
         begin
           after_perform_enqueue_parent *args
         ensure
-          ResqueJobsTree::Storage.cleanup node, resources
+          ResqueJobsTree::Storage.failure_cleanup node, resources
         end
       else
-        ResqueJobsTree::Storage.cleanup node, resources, global: true
+        ResqueJobsTree::Storage.failure_cleanup node, resources, global: true
         raise exception
       end
     end
 
-    def tree_node_and_resources args
+    def node_and_resources args
       tree_name , job_name = args[0..1]
       tree                 = ResqueJobsTree::Factory.find_tree_by_name tree_name
       node                 = tree.find_node_by_name job_name
