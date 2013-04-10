@@ -31,6 +31,7 @@ class ResqueJobsTree::Job
         end
       else
         ResqueJobsTree::Storage.failure_cleanup node, resources, global: true
+        node.tree.on_failure.call(resources) if node.tree.on_failure.kind_of?(Proc)
         raise exception
       end
     end

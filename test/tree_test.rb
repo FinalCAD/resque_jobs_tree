@@ -46,4 +46,24 @@ class TreeTest < MiniTest::Unit::TestCase
     end
   end
 
+  def test_on_failure
+    create_tree_with_on_failure_hook
+    assert_raises RuntimeError, 'called form on_failure block' do
+      @tree.launch
+    end
+  end
+
+  private
+
+  def create_tree_with_on_failure_hook
+    @tree = ResqueJobsTree::Factory.create :tree1 do
+      root :job1 do
+        perform { raise 'expected failure' }
+      end
+      on_failure do
+        raise 'called form on_failure block'
+      end
+    end
+  end
+
 end

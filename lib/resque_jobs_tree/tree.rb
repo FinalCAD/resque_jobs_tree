@@ -14,6 +14,10 @@ class ResqueJobsTree::Tree
     end
   end
 
+  def on_failure &block
+    @on_failure ||= block
+  end
+
   def launch *resources
     ResqueJobsTree::Storage.track_launch self, resources do
       @root.launch resources
