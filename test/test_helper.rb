@@ -18,11 +18,17 @@ Resque.inline = true
 # Fixtures
 #
 class Model
+  def initialize id
+    @id = id
+  end
   def id
     @id ||= rand 1000
   end
   def self.find id
-    'stubed_instance'
+    new id
+  end
+  def == other
+    id == other.id
   end
 end
 

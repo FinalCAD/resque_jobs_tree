@@ -53,6 +53,11 @@ class TreeTest < MiniTest::Unit::TestCase
     end
   end
 
+  def test_tree_with_resource
+    create_tree_with_resources
+    @tree.launch Model.new(1)
+  end
+
   private
 
   def create_tree_with_on_failure_hook
@@ -62,6 +67,16 @@ class TreeTest < MiniTest::Unit::TestCase
       end
       on_failure do
         raise 'called form on_failure block'
+      end
+    end
+  end
+
+  def create_tree_with_resources
+    @tree = ResqueJobsTree::Factory.create :tree1 do
+      root :job1 do
+        perform do |resources|
+          raise 'unknown resource' unless resources.first.kind_of?(Model)
+        end
       end
     end
   end

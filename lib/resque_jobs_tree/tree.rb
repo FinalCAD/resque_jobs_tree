@@ -25,9 +25,8 @@ class ResqueJobsTree::Tree
     end
   end
 
-  def enqueue *job_args
-    job_args.unshift name
-    @jobs << job_args
+  def enqueue job_name, *resources
+    @jobs << ([name, job_name] + ResqueJobsTree::ResourcesSerializer.to_args(resources))
   end
 
   def find_node_by_name name
