@@ -25,7 +25,9 @@ class TreeTest < MiniTest::Unit::TestCase
   end
 
   def test_find_node_by_name
-    assert_equal @tree.find_node_by_name('job2').name, 'job2'
+    assert_equal 'job2', @tree.find_node_by_name('job2').name
+    create_nested_tree
+    assert_equal 'job4', @tree.find_node_by_name('job4').name
   end
 
   def test_launch
@@ -56,6 +58,14 @@ class TreeTest < MiniTest::Unit::TestCase
   def test_tree_with_resource
     create_tree_with_resources
     @tree.launch Model.new(1)
+  end
+
+  def test_nested_tree
+    create_nested_tree
+    @tree.launch
+    assert_raises NoMethodError do
+      Resque.enqueue_to 'tree1', ResqueJobsTree::Job, 'tree1', 'job3'
+    end
   end
 
   private

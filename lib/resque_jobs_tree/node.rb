@@ -58,14 +58,17 @@ class ResqueJobsTree::Node
   end
 
   def find_node_by_name _name
-    return self if name == _name.to_s
-    node_childs.detect{ |node| node.find_node_by_name _name }
+    if name == _name.to_s
+      self
+    else
+      node_childs.inject(nil){|result,node| result ||= node.find_node_by_name _name }
+    end
   end
 
   def validate!
-    if childs.kind_of?(Proc) && node_childs.empty?
+    if (childs.kind_of?(Proc) && node_childs.empty?) || (childs.nil? && !node_childs.empty?)
       raise ResqueJobsTree::NodeInvalid,
-        "node `#{name}` from tree `#{tree.name}` defines childs without child nodes"
+        "node `#{name}` from tree `#{tree.name}` should defines childs and child nodes"
     end
     unless perform.kind_of? Proc
       raise ResqueJobsTree::NodeInvalid,

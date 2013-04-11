@@ -81,4 +81,23 @@ class MiniTest::Unit::TestCase
     Resque.redis
   end
 
+  def create_nested_tree
+    @tree = ResqueJobsTree::Factory.create :tree1 do
+      root :job1 do
+        perform { raise 'job1' }
+        childs { [ [:job2] ] }
+        node :job2, continue_on_failure: true do
+          perform { raise 'job2' }
+          childs { [ [:job3], [:job4] ] }
+          node :job3, async: true do
+            perform {}
+          end
+          node :job4, continue_on_failure: true do
+            perform { raise 'job4' }
+          end
+        end
+      end
+    end
+  end
+
 end
