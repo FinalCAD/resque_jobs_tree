@@ -7,7 +7,7 @@ class ResqueJobsTree::Job
       node.perform.call resources
     end
 
-    private
+    protected
 
     def after_perform_enqueue_parent *args
       node, resources = node_and_resources(args)

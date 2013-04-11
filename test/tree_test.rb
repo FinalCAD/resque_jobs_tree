@@ -50,7 +50,7 @@ class TreeTest < MiniTest::Unit::TestCase
 
   def test_on_failure
     create_tree_with_on_failure_hook
-    assert_raises RuntimeError, 'called form on_failure block' do
+    assert_raises ExpectedException do
       @tree.launch
     end
   end
@@ -62,10 +62,50 @@ class TreeTest < MiniTest::Unit::TestCase
 
   def test_nested_tree
     create_nested_tree
-    @tree.launch
-    assert_raises NoMethodError do
+    assert_raises RuntimeError do # job4 error !
+      @tree.launch
+    end
+    assert_raises NoMethodError do # job3 error !
       Resque.enqueue_to 'tree1', ResqueJobsTree::Job, 'tree1', 'job3'
     end
+  end
+
+  def test_async_tree
+    tree = ResqueJobsTree::Factory.create :tree1 do
+      root :job1 do
+        perform { raise 'should not arrive here' }
+        childs { [ [:job2], [:job3] ] }
+        node :job2, async: true do
+          perform {}
+        end
+        node :job3 do
+          perform {}
+        end
+      end
+    end
+    tree.launch
+    assert_equal ["ResqueJobsTree:Node:[\"tree1\",\"job2\"]"],
+      Resque.redis.smembers("ResqueJobsTree:Node:[\"tree1\",\"job1\"]:childs")
+  end
+
+  def test_async_tree_with_fail
+    tree = ResqueJobsTree::Factory.create :tree1 do
+      root :job1 do
+        perform { raise 'should not arrive here' }
+        childs { [ [:job2], [:job3] ] }
+        node :job2, async: true do
+          perform {}
+        end
+        node :job3, continue_on_failure: true do
+          perform { raise ExpectedException, 'an expected failure' }
+        end
+      end
+    end
+    assert_raises ExpectedException do
+      tree.launch
+    end
+    assert_equal ["ResqueJobsTree:Node:[\"tree1\",\"job2\"]"],
+      Resque.redis.smembers("ResqueJobsTree:Node:[\"tree1\",\"job1\"]:childs")
   end
 
   private
@@ -73,10 +113,10 @@ class TreeTest < MiniTest::Unit::TestCase
   def create_tree_with_on_failure_hook
     @tree = ResqueJobsTree::Factory.create :tree1 do
       root :job1 do
-        perform { raise 'expected failure' }
+        perform { raise ExpectedException, 'job1' }
       end
       on_failure do
-        raise 'called form on_failure block'
+        raise ExpectedException, 'called from on_failure block'
       end
     end
   end

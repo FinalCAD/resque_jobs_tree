@@ -32,22 +32,7 @@ class Model
   end
 end
 
-
-# Run resque callbacks in inline mode
-class ResqueJobsTree::Job
-  class << self
-    def perform_with_hook *args
-      begin
-        perform_without_hook *args
-        after_perform_enqueue_parent *args
-      rescue => exception
-        on_failure_cleanup exception, *args
-      end
-    end
-    alias_method :perform_without_hook, :perform
-    alias_method :perform, :perform_with_hook
-  end
-end
+class ExpectedException < Exception ; end
 
 class MiniTest::Unit::TestCase
 
@@ -84,7 +69,7 @@ class MiniTest::Unit::TestCase
   def create_nested_tree
     @tree = ResqueJobsTree::Factory.create :tree1 do
       root :job1 do
-        perform { raise 'job1' }
+        perform { raise ExpectedException, 'job1' }
         childs { [ [:job2] ] }
         node :job2, continue_on_failure: true do
           perform { raise 'job2' }

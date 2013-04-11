@@ -123,7 +123,7 @@ class NodeTest < MiniTest::Unit::TestCase
   def test_launch_continue_on_failure
     tree = ResqueJobsTree::Factory.create :tree1 do
       root :job1 do
-        perform { raise 'an unexpected failure' }
+        perform { raise ExpectedException, 'an expected failure' }
         childs { [:job2] }
         node :job2, continue_on_failure: true do
           perform { raise 'an expected failure' }
@@ -131,7 +131,7 @@ class NodeTest < MiniTest::Unit::TestCase
       end
     end
     resources = [1, 2, 3]
-    assert_raises RuntimeError, 'an unexpected failure' do
+    assert_raises ExpectedException do
       tree.launch resources
     end
     assert_equal [], Resque.keys
@@ -143,12 +143,12 @@ class NodeTest < MiniTest::Unit::TestCase
         perform {}
         childs { [:job2] }
         node :job2 do
-          perform { raise 'an unexpected failure' }
+          perform { raise ExpectedException, 'an expected exception'}
         end
       end
     end
     resources = [1, 2, 3]
-    assert_raises RuntimeError, 'an unexpected failure' do
+    assert_raises ExpectedException do
       tree.launch *resources
     end
     assert_equal [], Resque.keys
@@ -157,7 +157,7 @@ class NodeTest < MiniTest::Unit::TestCase
   def test_root_failure
     tree = ResqueJobsTree::Factory.create :tree1 do
       root :job1 do
-        perform { raise 'an unexpected failure' }
+        perform { raise ExpectedException, 'an expected exception' }
         childs { [:job2] }
         node :job2 do
           perform {}
@@ -165,7 +165,7 @@ class NodeTest < MiniTest::Unit::TestCase
       end
     end
     resources = [1, 2, 3]
-    assert_raises RuntimeError, 'an unexpected failure' do
+    assert_raises ExpectedException do
       tree.launch resources
     end
     assert_equal [], Resque.keys
