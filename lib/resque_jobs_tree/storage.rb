@@ -19,8 +19,10 @@ module ResqueJobsTree::Storage
   def remove node, resources
     lock node, resources do
       siblings_key = siblings_key node, resources
-      redis.srem siblings_key, key(node, resources)
+      node_key = key(node, resources)
+      redis.srem siblings_key, node_key
       yield if redis.scard(siblings_key) == 0 && block_given?
+      redis.hdel PARENTS_KEY, node_key
     end
   end
 

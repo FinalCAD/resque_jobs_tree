@@ -86,6 +86,8 @@ class TreeTest < MiniTest::Unit::TestCase
     tree.launch
     assert_equal ["ResqueJobsTree:Node:[\"tree1\",\"job2\"]"],
       Resque.redis.smembers("ResqueJobsTree:Node:[\"tree1\",\"job1\"]:childs")
+    parents_hash = { 'ResqueJobsTree:Node:["tree1","job2"]'=>'ResqueJobsTree:Node:["tree1","job1"]' }
+    assert_equal parents_hash, Resque.redis.hgetall(ResqueJobsTree::Storage::PARENTS_KEY)
   end
 
   def test_async_tree_with_fail
