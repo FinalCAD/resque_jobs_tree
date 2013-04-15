@@ -12,8 +12,6 @@ $TESTING = true
 require 'mock_redis'
 Resque.redis = MockRedis.new
 
-Resque.inline = true
-
 #
 # Fixtures
 #
@@ -36,12 +34,22 @@ class ExpectedException < Exception ; end
 
 class MiniTest::Unit::TestCase
 
+  def setup
+    Resque.inline = true
+  end
+
+  private
+
   def teardown
     redis.keys.each{ |key| redis.del key }
   end
 
+  def redis
+    Resque.redis
+  end
+
   def create_tree
-    @tree = ResqueJobsTree::Factory.create :tree1 do
+    @tree_definition = ResqueJobsTree::Factory.create :tree1 do
       root :job1 do
         perform do |*args|
           Resque.redis.rpush 'history', 'tree1 job1'
@@ -62,12 +70,8 @@ class MiniTest::Unit::TestCase
     end
   end
 
-  def redis
-    Resque.redis
-  end
-
   def create_nested_tree
-    @tree = ResqueJobsTree::Factory.create :tree1 do
+    @tree_definition = ResqueJobsTree::Factory.create :tree1 do
       root :job1 do
         perform { raise ExpectedException, 'job1' }
         childs { [ [:job2] ] }

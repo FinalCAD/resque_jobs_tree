@@ -1,92 +1,96 @@
 class ResqueJobsTree::Node
 
-  attr_accessor :tree, :parent, :name, :node_childs, :options
+  include ResqueJobsTree::Storage::Node
 
-  def initialize name, tree, parent=nil
-    @tree        = tree
-    @name        = name.to_s
-    @parent      = parent
-    @node_childs = []
-    @options     = {}
+  attr_reader :resources, :definition, :tree
+
+  def initialize definition, resources, parent=nil, tree=nil
+    @childs     = []
+    @definition = definition
+    @resources  = resources
+    @parent     = parent
+    @tree       = tree
   end
 
-  def resources &block
-    @resources_block ||= block
+  def enqueue
+    Resque.enqueue_to definition.tree.name, ResqueJobsTree::Job, *argumentize
   end
 
-  def perform &block
-    @perform_block ||= block
+  def perform
+    definition.perform.call *resources
   end
 
-  def childs &block
-    @childs ||= block
+  def before_perform
+    run_callback :before_perform
   end
 
-  # Defines a child node.
-  def node name, options={}, &block
-    ResqueJobsTree::Node.new(name, tree, self).tap do |node|
-      node.options = options
-      @node_childs << node
-      node.instance_eval(&block) if block_given?
-    end
-  end
-
-  def leaf? resources
-    childs.kind_of?(Proc) ?  childs.call(resources).empty? : true
-  end
-
-  def root?
-    parent == nil
-  end
-
-  def siblings
-    return [] unless parent
-    parent.node_childs - [self]
-  end
-
-  def launch resources, parent_resources=nil
-    unless root?
-      ResqueJobsTree::Storage.store self, resources, parent, parent_resources
-    end
-    if node_childs.empty?
-      @tree.enqueue(name, *resources) unless options[:async]
+  def after_perform
+    run_callback :after_perform
+    if root?
+      tree.finish
     else
-      childs.call(resources).each do |name, *child_resources|
-        find_node_by_name(name).launch child_resources, resources
+      lock do
+        parent.enqueue if only_stored_child?
+        unstore
       end
     end
   end
 
-  def find_node_by_name _name
-    if name == _name.to_s
-      self
+  def on_failure
+    if definition.options[:continue_on_failure]
+      after_perform
     else
-      node_childs.inject(nil){|result,node| result ||= node.find_node_by_name _name }
+      root.tree.on_failure
+      root.cleanup
     end
   end
 
-  def validate!
-    if (childs.kind_of?(Proc) && node_childs.empty?) || (childs.nil? && !node_childs.empty?)
-      raise ResqueJobsTree::NodeInvalid,
-        "node `#{name}` from tree `#{tree.name}` should defines childs and child nodes"
-    end
-    unless perform.kind_of? Proc
-      raise ResqueJobsTree::NodeInvalid,
-        "node `#{name}` from tree `#{tree.name}` has no perform block"
-    end
-    if (tree.nodes - [self]).map(&:name).include? name
-      raise ResqueJobsTree::NodeInvalid,
-        "node name `#{name}` is already taken in tree `#{tree.name}`"
-    end
-    node_childs.each &:validate!
+  def tree
+    @tree ||= root? ? definition.tree.spawn(resources) : @parent.tree
   end
 
-  def nodes
-    node_childs+node_childs.map(&:nodes)
+  def name
+    definition.name
+  end
+
+  def leaf?
+    childs.empty?
+  end
+
+  def root?
+    definition.root?
+  end
+
+  def root
+    @root ||= root? ? self : parent.root
+  end
+
+  def childs
+    return @childs unless @childs.empty?
+    @childs = definition.leaf? ?  [] : definition.childs.call(*resources)
+  end
+
+  def launch
+    store unless root?
+    if leaf?
+      tree.register_a_leaf self
+    else
+      childs.each do |node_name, *resources|
+        node = definition.find(node_name).spawn resources, self
+        node.launch
+      end
+    end
   end
 
   def inspect
-    "<ResqueJobsTree::Node @name=#{name}>"
+    "<ResqueJobsTree::Node @name=#{name} @resources=#{resources}>"
+  end
+
+  private
+
+  def run_callback callback
+    callback_block = definition.send callback
+    callback_block.call(*resources) if callback_block.kind_of? Proc
   end
 
 end

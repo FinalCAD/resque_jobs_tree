@@ -1,15 +1,13 @@
 require 'test_helper'
 
 class JobTest < MiniTest::Unit::TestCase
-	
-	def setup
-		create_tree
-		@args = [@tree.name, @tree.find_node_by_name('job1').name, 1, 2, 3]
-	end
 
-	def test_tree_node_and_resources
-		result = [@tree.find_node_by_name('job1'), [1, 2, 3]]
-		assert_equal result, ResqueJobsTree::Job.send(:node_and_resources, @args)
+	def test_node
+		create_tree
+		args = [@tree_definition.name, @tree_definition.find('job1').name, 1, 2, 3]
+		assert_equal @tree_definition.find(:job1), ResqueJobsTree::Job.send(:node, *args).definition
+		assert_equal ResqueJobsTree.find(:tree1), ResqueJobsTree::Job.send(:node, *args).definition.tree
+		assert_equal [1, 2, 3], ResqueJobsTree::Job.send(:node, *args).resources
 	end
 
 end

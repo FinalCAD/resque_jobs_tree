@@ -1,55 +1,60 @@
 class ResqueJobsTree::Tree
 
-  attr_accessor :name
-  attr_reader :jobs
+  include ResqueJobsTree::Storage::Tree
 
-  def initialize name
-    @name = name.to_s
-    @jobs = []
+  attr_reader :definition, :resources, :leaves
+
+  def initialize definition, resources
+    @definition = definition
+    @resources = resources
+    @leaves = []
   end
 
-  def root name=nil, &block
-    @root ||= ResqueJobsTree::Node.new(name, self).tap do |root|
-      root.instance_eval &block
-    end
+  def name
+    @definition.name
   end
 
-  def on_failure &block
-    @on_failure ||= block
-  end
-
-  def launch *resources
-    ResqueJobsTree::Storage.track_launch self, resources do
-      @root.launch resources
+  def launch
+    if uniq?
+      before_perform
+      store
+      root.launch
       enqueue_leaves_jobs
     end
   end
 
-  def enqueue job_name, *resources
-    @jobs << ([name, job_name] + ResqueJobsTree::ResourcesSerializer.to_args(resources))
+  %w(before_perform after_perform on_failure).each do |callback|
+    class_eval %Q{def #{callback} ; run_callback :#{callback} ; end}
   end
 
-  def find_node_by_name name
-    root.find_node_by_name name.to_s
+  def root
+    @root ||= ResqueJobsTree::Node.new(definition.root, resources, nil, self)
   end
 
-  def validate!
-    raise(ResqueJobsTree::TreeInvalid, "`#{name}` has no root node") unless @root
-    root.validate!
-  end
-
-  def nodes
-    [root, root.nodes].flatten
+  def register_a_leaf node
+    @leaves << node
   end
 
   def inspect
-    "<ResqueJobsTree::Tree @name=#{name}>"
+    "<ResqueJobsTree::Tree @name=#{name} @resources=#{resources} >"
+  end
+
+  def finish
+    after_perform
+    unstore
   end
 
   private
 
   def enqueue_leaves_jobs
-    @jobs.each{ |job_args| Resque.enqueue_to name, ResqueJobsTree::Job, *job_args }
+    @leaves.each do |leaf|
+      leaf.enqueue unless leaf.definition.options[:async]
+    end
+  end
+
+  def run_callback callback
+    callback = definition.send(callback)
+    callback.call(*resources) if callback.kind_of? Proc
   end
 
 end

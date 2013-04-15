@@ -7,12 +7,11 @@ class FactoryTest < MiniTest::Unit::TestCase
   end
 
   def test_tree_creation
-    assert_equal ResqueJobsTree::Factory.trees.first.object_id, @tree.object_id
+    assert_equal ResqueJobsTree::Factory.trees.values.first.name, @tree_definition.name
   end
 
-  def test_find_by_name
-    assert_equal ResqueJobsTree::Factory.find_tree_by_name(@tree.name).object_id,
-      @tree.object_id
+  def test_find
+    assert_equal ResqueJobsTree::Factory.find(@tree_definition.name).name, @tree_definition.name
   end
 
 end
