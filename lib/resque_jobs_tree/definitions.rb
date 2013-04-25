@@ -9,7 +9,7 @@ class ResqueJobsTree::Definitions
 	end
 
 	def after_perform &block
-    @before_perform ||= block
+    @after_perform ||= block
 	end
 
 end

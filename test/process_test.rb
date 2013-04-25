@@ -199,6 +199,39 @@ class ProcessTest < MiniTest::Unit::TestCase
       Resque.redis.smembers("ResqueJobsTree:Node:[\"tree1\",\"job1\"]:childs")
   end
 
+  def test_exception_in_on_failure_callback
+    Resque.inline = false
+    tree_definition = ResqueJobsTree::Factory.create :tree1 do
+      on_failure { raise 'an unexpected exception' }
+      root :job1 do
+        perform { raise ExpectedException, 'an expected exception'}
+      end
+    end
+    tree_definition.spawn([]).launch
+    assert_raises ExpectedException do
+      silenced_stdout do
+        run_resque_workers tree_definition.name
+      end
+    end
+    assert_equal ['queues'], Resque.redis.keys
+  end
+
+  def test_exception_in_after_perform_callback
+    Resque.inline = false
+    tree_definition = ResqueJobsTree::Factory.create :tree1 do
+      root :job1 do
+        after_perform { raise 'an unexpected exception'  }
+        perform {}
+      end
+    end
+    assert tree_definition.find(:job1).after_perform.kind_of?(Proc)
+    tree_definition.spawn([]).launch
+    silenced_stdout do
+      run_resque_workers tree_definition.name
+    end
+    assert_equal [], Resque.redis.keys
+  end
+
   private
 
   def assert_redis_empty
@@ -209,6 +242,14 @@ class ProcessTest < MiniTest::Unit::TestCase
   def run_resque_workers queue_name
     Resque::Job.reserve(queue_name).perform
     redis.srem 'queues', queue_name
+  end
+
+  def silenced_stdout
+    orig_stdout = $stdout
+    $stdout = File.new('/dev/null', 'w')
+    yield
+  ensure
+    $stdout = orig_stdout
   end
 
 end

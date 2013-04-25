@@ -23,8 +23,14 @@ class ResqueJobsTree::Tree
     end
   end
 
-  %w(before_perform after_perform on_failure).each do |callback|
+  %w(before_perform after_perform).each do |callback|
     class_eval %Q{def #{callback} ; run_callback :#{callback} ; end}
+  end
+
+  def on_failure
+    run_callback :on_failure
+  rescue
+    puts "[ResqueJobsTree::Tree] on_failure callback of tree #{name} has failed. Continuing for cleanup."
   end
 
   def root
