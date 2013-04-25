@@ -42,12 +42,10 @@ class ResqueJobsTree::Definitions::Node < ResqueJobsTree::Definitions
     root? ? [] : (parent.node_childs - [self])
   end
 
-  def find _name
-    if name == _name.to_s
-      self
-    else
-      node_childs.inject(nil){|result,node| result ||= node.find _name }
-    end
+  def find _name, first=true
+    return self if name == _name.to_s
+    node_childs.inject(nil){|result,node| result ||= node.find(_name, false) } ||
+      (first && raise(ResqueJobsTree::TreeDefinitionInvalid, "Cannot find node #{_name} in #{tree.name}"))
   end
 
   def validate!

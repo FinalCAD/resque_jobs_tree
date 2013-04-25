@@ -96,4 +96,19 @@ class DefinitionsTest < MiniTest::Unit::TestCase
     assert_equal options, @tree.find(:node2).options
   end
 
+  def test_find
+    tree_definition = ResqueJobsTree::Factory.create :tree1 do
+      root :job1 do
+        perform {}
+        childs { [:job4] }
+        node :job2 do
+          perform {}
+        end
+      end
+    end
+    assert_raises ResqueJobsTree::TreeDefinitionInvalid do
+      tree_definition.spawn([]).launch
+    end
+  end
+
 end
