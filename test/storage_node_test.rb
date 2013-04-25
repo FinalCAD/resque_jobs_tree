@@ -82,6 +82,22 @@ class StorageNodeTest < MiniTest::Unit::TestCase
 		assert_equal result, @root.send(:node_info_from_key, key)
 	end
 
+  def test_exists
+    create_tree
+    leaf = @tree_definition.find(:job2).spawn([])
+    assert !leaf.exists?, 'leaf not registred'
+    redis.hset ResqueJobsTree::Storage::PARENTS_KEY, leaf.key, true
+    assert leaf.exists?, 'leaf with parent'
+    redis.hdel ResqueJobsTree::Storage::PARENTS_KEY, leaf.key
+    redis.set leaf.childs_key, true
+    assert leaf.exists?, 'leaf with child'
+
+    root = @tree_definition.find(:job1).spawn([])
+    assert !root.exists?, 'root not registred'
+    redis.sadd ResqueJobsTree::Storage::LAUNCHED_TREES, root.tree.key
+    assert root.exists?, 'root with tree registred'
+  end
+
 	private
 
 	def assert_parent_key expected

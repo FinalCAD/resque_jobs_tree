@@ -16,6 +16,10 @@ module ResqueJobsTree::Storage::Tree
   def uniq?
     !redis.sismember LAUNCHED_TREES, key
   end
+
+  def exists?
+    redis.sismember LAUNCHED_TREES, key
+  end
   
   private
 

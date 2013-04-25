@@ -244,12 +244,4 @@ class ProcessTest < MiniTest::Unit::TestCase
     redis.srem 'queues', queue_name
   end
 
-  def silenced_stdout
-    orig_stdout = $stdout
-    $stdout = File.new('/dev/null', 'w')
-    yield
-  ensure
-    $stdout = orig_stdout
-  end
-
 end

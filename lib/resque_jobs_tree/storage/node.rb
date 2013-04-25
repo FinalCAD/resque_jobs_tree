@@ -51,6 +51,14 @@ module ResqueJobsTree::Storage::Node
     "#{key}:lock"
   end
 
+  def exists?
+    if definition.root?
+      tree.exists?
+    else
+      redis.exists(childs_key) || redis.hexists(PARENTS_KEY, key)
+    end
+  end
+
 	private
 
   def lock

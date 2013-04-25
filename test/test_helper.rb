@@ -89,4 +89,12 @@ class MiniTest::Unit::TestCase
     end
   end
 
+  def silenced_stdout
+    orig_stdout = $stdout
+    $stdout = File.new('/dev/null', 'w')
+    yield
+  ensure
+    $stdout = orig_stdout
+  end
+
 end

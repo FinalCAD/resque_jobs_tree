@@ -23,9 +23,23 @@ class ResqueJobsTree::Job
     def node tree_name, job_name, *resources_arguments
       node_definition = ResqueJobsTree.find(tree_name).find job_name
       resources       = ResqueJobsTree::ResourcesSerializer.instancize resources_arguments
-      node_definition.spawn resources
+      node = node_definition.spawn(resources)
+      if node.exists?
+        node
+      else
+        puts "Warning, the job #{node.definition.tree.name}##{node.definition.name}##{node.resources.inspect} " \
+             "doesn't exist. Cleaning-up."
+        node.cleanup
+        FakeNode.new
+      end
     end
 
+  end
+
+  class FakeNode
+    def method_missing *args
+      # do nothing
+    end
   end
 
 end
