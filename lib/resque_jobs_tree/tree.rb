@@ -19,7 +19,7 @@ class ResqueJobsTree::Tree
       before_perform
       store
       root.register
-      enqueue_nodes_jobs
+      enqueue_jobs
     end
   end
 
@@ -52,7 +52,7 @@ class ResqueJobsTree::Tree
 
   private
 
-  def enqueue_nodes_jobs
+  def enqueue_jobs
     @nodes.each do |leaf|
       leaf.enqueue unless leaf.definition.options[:async]
     end
