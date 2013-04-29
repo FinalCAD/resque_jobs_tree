@@ -18,7 +18,7 @@ class ResqueJobsTree::Tree
     if uniq?
       before_perform
       store
-      root.launch
+      root.register
       enqueue_nodes_jobs
     end
   end

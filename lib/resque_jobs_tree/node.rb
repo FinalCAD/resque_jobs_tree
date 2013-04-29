@@ -70,14 +70,14 @@ class ResqueJobsTree::Node
     @childs = definition.leaf? ?  [] : definition.childs.call(*resources)
   end
 
-  def launch
+  def register
     store unless root?
     if leaf?
       tree.register_node self
     else
       childs.each do |node_name, *resources|
         node = definition.find(node_name).spawn resources, self
-        node.launch
+        node.register
       end
     end
   end
@@ -96,7 +96,7 @@ class ResqueJobsTree::Node
       puts "[ResqueJobsTree::Tree] after_perform callback of node #{definition.tree.name}##{name} has failed."\
            " Continuing for cleanup."
     else
-      raise 
+      raise
     end
   end
 
