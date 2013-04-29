@@ -10,19 +10,19 @@ class TreeTest < MiniTest::Unit::TestCase
     assert_equal @tree_definition.name, 'tree1'
   end
 
-  def test_leaves
-    assert_equal @tree_definition.spawn([]).leaves, []
+  def test_nodes
+    assert_equal @tree_definition.spawn([]).nodes, []
   end
 
   def test_root
     assert @tree_definition.root.kind_of? ResqueJobsTree::Definitions::Node
   end
 
-  def test_register_a_leaf
+  def test_register_node
     leaf = 'leaf'
     tree = @tree_definition.spawn []
-    tree.register_a_leaf leaf
-    assert_equal tree.leaves, [leaf]
+    tree.register_node leaf
+    assert_equal tree.nodes, [leaf]
   end
 
   def test_find

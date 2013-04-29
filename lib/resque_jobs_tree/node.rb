@@ -73,7 +73,7 @@ class ResqueJobsTree::Node
   def launch
     store unless root?
     if leaf?
-      tree.register_a_leaf self
+      tree.register_node self
     else
       childs.each do |node_name, *resources|
         node = definition.find(node_name).spawn resources, self
