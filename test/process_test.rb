@@ -140,9 +140,9 @@ class ProcessTest < MiniTest::Unit::TestCase
     ResqueJobsTree.launch tree_definition.name, Model.new(1), 1
   end
 
-  def test_nested_tree
+  def test_nested_tree_with_job_failure
     Resque.inline = false
-    create_nested_tree
+    create_nested_tree_with_job_failure 
     @tree_definition.spawn([1,2,3]).launch
     assert_raises RuntimeError do # job4 error
       run_resque_workers @tree_definition.name

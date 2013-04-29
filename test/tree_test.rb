@@ -27,7 +27,7 @@ class TreeTest < MiniTest::Unit::TestCase
 
   def test_find
     assert_equal 'job2', @tree_definition.find(:job2).name
-    tree_definition = create_nested_tree
+    tree_definition = create_nested_tree_with_job_failure 
     assert_equal 'job4', tree_definition.find(:job4).name
   end
 

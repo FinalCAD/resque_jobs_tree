@@ -70,7 +70,7 @@ class MiniTest::Unit::TestCase
     end
   end
 
-  def create_nested_tree
+  def create_nested_tree_with_job_failure 
     @tree_definition = ResqueJobsTree::Factory.create :tree1 do
       root :job1 do
         perform { raise ExpectedException, 'job1' }
