@@ -27,7 +27,7 @@ class ResqueJobsTree::Definitions::Node < ResqueJobsTree::Definitions
   end
 
 	def perform &block
-    @perform ||= block
+    @perform ||= block || Proc.new {}
 	end
 
   def leaf?

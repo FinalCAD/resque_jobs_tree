@@ -14,4 +14,21 @@ class FactoryTest < MiniTest::Unit::TestCase
     assert_equal ResqueJobsTree::Factory.find(@tree_definition.name).name, @tree_definition.name
   end
 
+  def test_without_perform
+    assert_not_raises do
+      ResqueJobsTree::Factory.create :tree_with_job_without_perform do
+        root :job_without_perform
+      end
+    end.must_equal 'ok'
+  end
+
+  def assert_not_raises
+    begin
+      yield
+      'ok'
+    rescue
+      $!
+    end
+  end
+
 end
