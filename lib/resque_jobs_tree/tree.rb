@@ -20,6 +20,9 @@ class ResqueJobsTree::Tree
       store
       root.register
       enqueue_jobs
+    else
+      raise ResqueJobsTree::JobNotUniq,
+        "Tree Definition must be uniq"
     end
   end
 

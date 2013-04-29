@@ -2,10 +2,23 @@ require 'test_helper'
 
 class ProcessTest < MiniTest::Unit::TestCase
 
+  def test_launch_without_uniq
+    create_tree
+    assert_raises ResqueJobsTree::JobNotUniq do
+      resque_jobs_tree = @tree_definition.spawn [1, 2, 3]
+      resque_jobs_tree.stub :uniq?, false do
+        resque_jobs_tree.launch
+      end
+    end
+  end
+
   def test_launch
     create_tree
     resources = [1, 2, 3]
-    @tree_definition.spawn(resources).launch
+    resque_jobs_tree = @tree_definition.spawn(resources)
+    resque_jobs_tree.stub :uniq?, true do
+      resque_jobs_tree.launch
+    end
     history = ['tree1 job2']*3+['tree1 job1']
     assert_equal history, redis.lrange('history', 0, -1)
   end
@@ -142,7 +155,7 @@ class ProcessTest < MiniTest::Unit::TestCase
 
   def test_nested_tree_with_job_failure
     Resque.inline = false
-    create_nested_tree_with_job_failure 
+    create_nested_tree_with_job_failure
     @tree_definition.spawn([1,2,3]).launch
     assert_raises RuntimeError do # job4 error
       run_resque_workers @tree_definition.name
