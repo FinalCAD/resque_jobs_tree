@@ -52,7 +52,7 @@ Organise each sequences of jobs into a single file
 This code is defining the tree, then when it launches the sequence of jobs, it:
 * stocks in Redis all the Resque jobs which needs to be done including the needed parameters to run them.
 * stocks in Redis the childhood relationsips between them.
-* enqueues in Resque the jobs which are the leaves of the tree
+* enqueues in Resque the jobs which are the nodes of the tree
 
 Limitations:
 
@@ -64,7 +64,7 @@ you can't enqueue 2 times `[:mail, User.first]`
 
 Node options:
 
-* `{ async: true }` if you need your process to wait for an outsider to continue.
+* `{ triggerable: true }` if you need your process to wait for an outsider to start.
 * `{ continue_on_fail: true}` if your process can continue even after a fail during a job.
 
 ## Contributing

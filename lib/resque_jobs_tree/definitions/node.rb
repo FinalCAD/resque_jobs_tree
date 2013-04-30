@@ -14,7 +14,11 @@ class ResqueJobsTree::Definitions::Node < ResqueJobsTree::Definitions
     ResqueJobsTree::Definitions::Node.new(name, tree, self).tap do |node|
       node.options = options
       @node_childs << node
-      node.instance_eval(&block) if block_given?
+      if block_given?
+        node.instance_eval &block
+      elsif options.has_key? :triggerable
+        node.perform {}
+      end
     end
   end
 
@@ -49,18 +53,38 @@ class ResqueJobsTree::Definitions::Node < ResqueJobsTree::Definitions
   end
 
   def validate!
+    # Should have a child's naming [:job1, ...] and node childs Proc implementation associated
+    # node :job1 do
+    #  perform {}
+    # end
+    # ...
     if (childs.kind_of?(Proc) && node_childs.empty?) || (childs.nil? && !node_childs.empty?)
       raise ResqueJobsTree::NodeDefinitionInvalid,
         "node `#{name}` from tree `#{tree.name}` should defines childs and child nodes"
     end
-    unless perform.kind_of? Proc
+
+    # Should have an implementation
+    # node :job1 do
+    #  perform {}
+    # end
+    if !perform.kind_of? Proc and !options.has_key? :triggerable
       raise ResqueJobsTree::NodeDefinitionInvalid,
         "node `#{name}` from tree `#{tree.name}` has no perform block"
     end
+
+    # Naming Should be uniq
     if (tree.nodes - [self]).map(&:name).include? name
       raise ResqueJobsTree::NodeDefinitionInvalid,
         "node name `#{name}` is already taken in tree `#{tree.name}`"
     end
+
+    # Only one job can be trigger tree
+    if node_childs.select { |entry| entry.options.has_key?(:triggerable) }.size > 1
+      raise ResqueJobsTree::NodeDefinitionInvalid,
+        "Only one job must be declared to be triggerable into an definition, tree `#{tree.name}`"
+    end
+
+    # Recursive call for validate all of tree
     node_childs.each &:validate!
   end
 
