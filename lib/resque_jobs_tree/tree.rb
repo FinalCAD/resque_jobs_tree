@@ -57,7 +57,7 @@ class ResqueJobsTree::Tree
 
   def enqueue_jobs
     @nodes.each do |leaf|
-      leaf.enqueue unless leaf.definition.options[:async]
+      leaf.enqueue unless leaf.definition.options[:triggerable]
     end
   end
 

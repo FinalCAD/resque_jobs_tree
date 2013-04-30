@@ -64,7 +64,7 @@ you can't enqueue 2 times `[:mail, User.first]`
 
 Node options:
 
-* `{ async: true }` if you need your process to wait for an outsider to continue.
+* `{ triggerable: true }` if you need your process to wait for an outsider to start.
 * `{ continue_on_fail: true}` if your process can continue even after a fail during a job.
 
 ## Contributing

@@ -44,12 +44,29 @@ class ProcessTest < MiniTest::Unit::TestCase
     assert_redis_empty
   end
 
-  def test_launch_async
+  def test_just_one_triggerable_job
+    assert_raises ResqueJobsTree::NodeDefinitionInvalid do
+      tree_definition = ResqueJobsTree::Factory.create :tree1 do
+        root :job1 do
+          perform { puts 'job1' }
+          childs { [:job2, :job3] }
+          node :job2, triggerable: true do
+            perform {}
+          end
+          node :job3, triggerable: true
+        end
+      end
+      tree = tree_definition.spawn [1, 2, 3]
+      tree.launch
+    end
+  end
+
+  def test_launch_triggerable
     tree_definition = ResqueJobsTree::Factory.create :tree1 do
       root :job1 do
         perform { raise 'should not arrive here' }
         childs { [:job2] }
-        node :job2, async: true do
+        node :job2, triggerable: true do
           perform {}
         end
       end
@@ -170,12 +187,12 @@ class ProcessTest < MiniTest::Unit::TestCase
     end
   end
 
-  def test_async_tree
+  def test_triggerable_tree
     tree_definition = ResqueJobsTree::Factory.create :tree1 do
       root :job1 do
         perform { raise 'should not arrive here' }
         childs { [ [:job2], [:job3] ] }
-        node :job2, async: true do
+        node :job2, triggerable: true do
           perform {}
         end
         node :job3 do
@@ -190,13 +207,13 @@ class ProcessTest < MiniTest::Unit::TestCase
     assert_equal parents_hash, Resque.redis.hgetall(ResqueJobsTree::Storage::PARENTS_KEY)
   end
 
-  def test_async_tree_with_fail
+  def test_triggerable_tree_with_fail
     Resque.inline = false
     tree_definition = ResqueJobsTree::Factory.create :tree1 do
       root :job1 do
         perform { raise 'should not arrive here' }
         childs { [ [:job2], [:job3] ] }
-        node :job2, async: true do
+        node :job2, triggerable: true do
           perform {}
         end
         node :job3, continue_on_failure: true do

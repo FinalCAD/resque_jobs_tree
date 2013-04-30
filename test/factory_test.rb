@@ -14,10 +14,23 @@ class FactoryTest < MiniTest::Unit::TestCase
     assert_equal ResqueJobsTree::Factory.find(@tree_definition.name).name, @tree_definition.name
   end
 
+  def test_without_perform_whitout_flag
+    assert_raises ResqueJobsTree::NodeDefinitionInvalid do
+      ResqueJobsTree::Factory.create :tree_with_job_without_perform do
+        root :job_without_perform
+      end
+    end
+  end
+
   def test_without_perform
     assert_not_raises do
       ResqueJobsTree::Factory.create :tree_with_job_without_perform do
-        root :job_without_perform
+        # root :job_without_perform, triggerable: true
+        root :job_without_perform do
+          perform { puts 'job1' }
+          childs { [:job1] }
+          node :job1 , triggerable: true
+        end
       end
     end.must_equal 'ok'
   end
@@ -27,7 +40,7 @@ class FactoryTest < MiniTest::Unit::TestCase
       yield
       'ok'
     rescue
-      $!
+      raise
     end
   end
 
