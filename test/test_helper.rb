@@ -70,7 +70,7 @@ class MiniTest::Unit::TestCase
     end
   end
 
-  def create_nested_tree
+  def create_nested_tree_with_job_failure 
     @tree_definition = ResqueJobsTree::Factory.create :tree1 do
       root :job1 do
         perform { raise ExpectedException, 'job1' }
@@ -78,7 +78,7 @@ class MiniTest::Unit::TestCase
         node :job2, continue_on_failure: true do
           perform { raise 'job2' }
           childs { [ [:job3], [:job4] ] }
-          node :job3, async: true do
+          node :job3, triggerable: true do
             perform {}
           end
           node :job4, continue_on_failure: true do

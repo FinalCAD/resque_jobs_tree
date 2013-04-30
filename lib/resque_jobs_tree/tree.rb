@@ -2,12 +2,12 @@ class ResqueJobsTree::Tree
 
   include ResqueJobsTree::Storage::Tree
 
-  attr_reader :definition, :resources, :leaves
+  attr_reader :definition, :resources, :nodes
 
   def initialize definition, resources
     @definition = definition
     @resources = resources
-    @leaves = []
+    @nodes = []
   end
 
   def name
@@ -18,8 +18,11 @@ class ResqueJobsTree::Tree
     if uniq?
       before_perform
       store
-      root.launch
-      enqueue_leaves_jobs
+      root.register
+      enqueue_jobs
+    else
+      raise ResqueJobsTree::JobNotUniq,
+        "Tree Definition must be uniq"
     end
   end
 
@@ -37,8 +40,8 @@ class ResqueJobsTree::Tree
     @root ||= ResqueJobsTree::Node.new(definition.root, resources, nil, self)
   end
 
-  def register_a_leaf node
-    @leaves << node
+  def register_node node
+    @nodes << node
   end
 
   def inspect
@@ -52,9 +55,9 @@ class ResqueJobsTree::Tree
 
   private
 
-  def enqueue_leaves_jobs
-    @leaves.each do |leaf|
-      leaf.enqueue unless leaf.definition.options[:async]
+  def enqueue_jobs
+    @nodes.each do |leaf|
+      leaf.enqueue unless leaf.definition.options[:triggerable]
     end
   end
 

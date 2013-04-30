@@ -1,5 +1,4 @@
 module ResqueJobsTree::Factory
-
   extend self
 
   def create name, &block

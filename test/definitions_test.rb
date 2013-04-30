@@ -91,7 +91,7 @@ class DefinitionsTest < MiniTest::Unit::TestCase
   end
 
   def test_options
-    options = { async: true }
+    options = { triggerable: true }
     @leaf.options = options
     assert_equal options, @tree.find(:node2).options
   end
