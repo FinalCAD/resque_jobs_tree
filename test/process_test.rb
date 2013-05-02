@@ -44,8 +44,8 @@ class ProcessTest < MiniTest::Unit::TestCase
     assert_redis_empty
   end
 
-  def test_just_one_triggerable_job
-    assert_raises ResqueJobsTree::NodeDefinitionInvalid do
+  def test_can_more_one_triggerable_job
+    assert_not_raises do
       tree_definition = ResqueJobsTree::Factory.create :tree1 do
         root :job1 do
           perform { puts 'job1' }
