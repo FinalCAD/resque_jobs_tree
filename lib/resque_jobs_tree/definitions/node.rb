@@ -78,12 +78,6 @@ class ResqueJobsTree::Definitions::Node < ResqueJobsTree::Definitions
         "node name `#{name}` is already taken in tree `#{tree.name}`"
     end
 
-    # Only one job can be trigger tree
-    if node_childs.select { |entry| entry.options.has_key?(:triggerable) }.size > 1
-      raise ResqueJobsTree::NodeDefinitionInvalid,
-        "Only one job must be declared to be triggerable into an definition, tree `#{tree.name}`"
-    end
-
     # Recursive call for validate all of tree
     node_childs.each &:validate!
   end
