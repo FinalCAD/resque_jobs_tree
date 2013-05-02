@@ -12,6 +12,14 @@ $TESTING = true
 require 'mock_redis'
 Resque.redis = MockRedis.new
 
+def assert_not_raises
+  begin
+    yield
+    'ok'
+  rescue
+    raise
+  end
+end
 #
 # Fixtures
 #
@@ -70,7 +78,7 @@ class MiniTest::Unit::TestCase
     end
   end
 
-  def create_nested_tree_with_job_failure 
+  def create_nested_tree_with_job_failure
     @tree_definition = ResqueJobsTree::Factory.create :tree1 do
       root :job1 do
         perform { raise ExpectedException, 'job1' }

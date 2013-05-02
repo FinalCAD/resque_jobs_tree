@@ -35,13 +35,4 @@ class FactoryTest < MiniTest::Unit::TestCase
     end.must_equal 'ok'
   end
 
-  def assert_not_raises
-    begin
-      yield
-      'ok'
-    rescue
-      raise
-    end
-  end
-
 end
