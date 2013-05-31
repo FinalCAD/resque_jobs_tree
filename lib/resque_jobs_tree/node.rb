@@ -25,7 +25,7 @@ class ResqueJobsTree::Node
   end
 
   def after_perform
-    run_callback(:after_perform)
+    run_callback :after_perform
     if root?
       tree.finish
     else
@@ -38,6 +38,7 @@ class ResqueJobsTree::Node
 
   def on_failure
     if definition.options[:continue_on_failure]
+      run_callback :on_failure
       after_perform
     else
       root.tree.on_failure
@@ -92,7 +93,7 @@ class ResqueJobsTree::Node
     callback_block = definition.send callback
     callback_block.call(*resources) if callback_block.kind_of? Proc
   rescue
-    if callback == :after_perform
+    if [:after_perform, :on_failure].include? callback
       puts "[ResqueJobsTree::Tree] after_perform callback of node #{definition.tree.name}##{name} has failed."\
            " Continuing for cleanup."
     else

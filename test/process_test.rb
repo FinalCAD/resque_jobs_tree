@@ -100,6 +100,34 @@ class ProcessTest < MiniTest::Unit::TestCase
     assert_redis_empty
   end
 
+  def test_launch_continue_on_failure_with_on_failure_block
+    Resque.inline = false
+    tree_definition = ResqueJobsTree::Factory.create :tree1 do
+      root :job1 do
+        perform do
+          Resque.redis.rpush 'history', 'tree1 job1 perform'
+        end
+        childs { [:job2] }
+        node :job2, continue_on_failure: true do
+          perform do
+            Resque.redis.rpush 'history', 'tree1 job2 perform'
+            raise 'an expected failure'
+          end
+          on_failure do
+            Resque.redis.rpush 'history', 'tree1 job2 on_failure'
+          end
+        end
+      end
+    end
+    tree_definition.spawn([1, 2, 3]).launch
+    assert_raises RuntimeError, 'an expected failure' do
+      run_resque_workers tree_definition.name
+    end
+    run_resque_workers tree_definition.name
+    assert_equal ['tree1 job2 perform','tree1 job2 on_failure', 'tree1 job1 perform'], redis.lrange('history', 0, -1)
+    redis.del 'history'
+  end
+
   def test_root_failure
     Resque.inline = false
     tree_definition = ResqueJobsTree::Factory.create :tree1 do
