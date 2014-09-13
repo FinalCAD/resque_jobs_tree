@@ -27,13 +27,16 @@ class ResqueJobsTree::Job
       if node.exists?
         node
       else
-        puts "Warning, the job #{node.definition.tree.name}##{node.definition.name}##{node.resources.inspect} " \
-             "doesn't exist. Cleaning-up."
+        reference = [
+          node.definition.tree.name,
+          node.definition.name,
+          node.resources.inspect
+        ].join('#')
+        puts "Warning, the job #{reference} doesn't exist. Cleaning-up."
         node.cleanup
         FakeNode.new
       end
     end
-
   end
 
   class FakeNode
@@ -41,5 +44,4 @@ class ResqueJobsTree::Job
       # do nothing
     end
   end
-
 end

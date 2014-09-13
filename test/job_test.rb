@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class JobTest < MiniTest::Unit::TestCase
+class JobTest < MiniTest::Test
 
 	def test_node
 		create_tree

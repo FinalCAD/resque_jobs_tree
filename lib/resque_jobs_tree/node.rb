@@ -17,7 +17,7 @@ class ResqueJobsTree::Node
   end
 
   def perform
-    definition.perform.call *resources
+    definition.perform.call(*resources)
   end
 
   def before_perform
@@ -100,5 +100,4 @@ class ResqueJobsTree::Node
       raise
     end
   end
-
 end

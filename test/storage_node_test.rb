@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class StorageNodeTest < MiniTest::Unit::TestCase
+class StorageNodeTest < MiniTest::Test
 
 	def setup
 		create_tree
@@ -15,11 +15,13 @@ class StorageNodeTest < MiniTest::Unit::TestCase
 
 	def test_storing
 		@leaf.store
-		assert_parent_key(
-      'ResqueJobsTree:Node:["tree1","job2",1,2,3]' => 'ResqueJobsTree:Node:["tree1","job1",1,2,3]')
-		assert_equal ['ResqueJobsTree:Node:["tree1","job2",1,2,3]'], redis.smembers(@root.childs_key)
+		assert_parent_keys(
+      'ResqueJobsTree:Node:Parents:ResqueJobsTree:Node:["tree1","job2",1,2,3]' =>
+        'ResqueJobsTree:Node:["tree1","job1",1,2,3]')
+		assert_equal ['ResqueJobsTree:Node:["tree1","job2",1,2,3]'],
+      redis.smembers(@root.childs_key)
 		@leaf.unstore
-		assert_parent_key({})
+		assert_parent_keys({})
 		assert_equal [], redis.smembers(@root.childs_key)
 	end
 
@@ -33,11 +35,16 @@ class StorageNodeTest < MiniTest::Unit::TestCase
 		create_3_nodes
 		@spawn3.cleanup
 		assert_equal [ 'ResqueJobsTree:Tree:Launched',
-                   'ResqueJobsTree:Node:Parents',
+                   'ResqueJobsTree:Node:Parents:ResqueJobsTree:Node:["tree1","job2"]',
+                   'ResqueJobsTree:Node:Parents:ResqueJobsTree:Node:["tree1","job3",2]',
                    'ResqueJobsTree:Node:["tree1","job1",1]:childs',
-                   'ResqueJobsTree:Node:["tree1","job2"]:childs'], redis.keys
-		assert_parent_key( 'ResqueJobsTree:Node:["tree1","job2"]' => 'ResqueJobsTree:Node:["tree1","job1",1]',
-                       'ResqueJobsTree:Node:["tree1","job3",2]' => 'ResqueJobsTree:Node:["tree1","job2"]')
+                   'ResqueJobsTree:Node:["tree1","job2"]:childs'].sort,
+                  redis.keys.sort
+		assert_parent_keys(
+      'ResqueJobsTree:Node:Parents:ResqueJobsTree:Node:["tree1","job2"]' =>
+        'ResqueJobsTree:Node:["tree1","job1",1]',
+      'ResqueJobsTree:Node:Parents:ResqueJobsTree:Node:["tree1","job3",2]' =>
+        'ResqueJobsTree:Node:["tree1","job2"]')
 		assert_trees_key ['ResqueJobsTree:Tree:["tree1",1]']
 	end
 
@@ -46,7 +53,7 @@ class StorageNodeTest < MiniTest::Unit::TestCase
 		@spawn2.cleanup
 		assert_equal [ 'ResqueJobsTree:Tree:Launched',
                    'ResqueJobsTree:Node:["tree1","job1",1]:childs'], redis.keys
-		assert_parent_key({})
+		assert_parent_keys({})
 		assert_trees_key ['ResqueJobsTree:Tree:["tree1",1]']
 	end
 
@@ -86,9 +93,11 @@ class StorageNodeTest < MiniTest::Unit::TestCase
     create_tree
     leaf = @tree_definition.find(:job2).spawn([])
     assert !leaf.exists?, 'leaf not registred'
-    redis.hset ResqueJobsTree::Storage::PARENTS_KEY, leaf.key, true
+    parent_key_storage_key =
+      "#{ResqueJobsTree::Storage::PARENTS_KEY}:#{leaf.key}"
+    redis.set parent_key_storage_key, true
     assert leaf.exists?, 'leaf with parent'
-    redis.hdel ResqueJobsTree::Storage::PARENTS_KEY, leaf.key
+    redis.del parent_key_storage_key
     redis.set leaf.childs_key, true
     assert leaf.exists?, 'leaf with child'
 
@@ -100,8 +109,18 @@ class StorageNodeTest < MiniTest::Unit::TestCase
 
 	private
 
-	def assert_parent_key expected
-		assert_equal expected, redis.hgetall(ResqueJobsTree::Storage::PARENTS_KEY)
+	def assert_parent_keys expected_parent_keys
+    result_parent_keys_storage_keys =
+      redis.keys
+      .select{|key| key.include? ResqueJobsTree::Storage::PARENTS_KEY}.sort
+    expected_parent_key_storage_key = expected_parent_keys.keys.sort
+    assert_equal expected_parent_key_storage_key,
+      result_parent_keys_storage_keys
+
+    expected_parent_keys.each do |parent_key_storage_key, expected_parent_key|
+      result_parent_key = redis.get(parent_key_storage_key)
+      assert_equal expected_parent_key, result_parent_key
+    end
 	end
 
 	def assert_trees_key expected
@@ -127,7 +146,7 @@ class StorageNodeTest < MiniTest::Unit::TestCase
 		@spawn2 = @tree_definition.find(:job2).spawn [], @spawn1
 		@spawn3 = @tree_definition.find(:job3).spawn [1], @spawn2
 		@spawn4 = @tree_definition.find(:job3).spawn [2], @spawn2
-		[@tree, @spawn2, @spawn3, @spawn4].each &:store
+		[@tree, @spawn2, @spawn3, @spawn4].each(&:store)
 	end
 
 end

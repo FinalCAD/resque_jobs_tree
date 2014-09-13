@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class ProcessTest < MiniTest::Unit::TestCase
+class ProcessTest < MiniTest::Test
 
   def test_launch_without_uniq
     create_tree
@@ -45,20 +45,18 @@ class ProcessTest < MiniTest::Unit::TestCase
   end
 
   def test_can_more_one_triggerable_job
-    assert_not_raises do
-      tree_definition = ResqueJobsTree::Factory.create :tree1 do
-        root :job1 do
-          perform { puts 'job1' }
-          childs { [:job2, :job3] }
-          node :job2, triggerable: true do
-            perform {}
-          end
-          node :job3, triggerable: true
+    tree_definition = ResqueJobsTree::Factory.create :tree1 do
+      root :job1 do
+        perform { puts 'job1' }
+        childs { [:job2, :job3] }
+        node :job2, triggerable: true do
+          perform {}
         end
+        node :job3, triggerable: true
       end
-      tree = tree_definition.spawn [1, 2, 3]
-      tree.launch
     end
+    tree = tree_definition.spawn [1, 2, 3]
+    tree.launch
   end
 
   def test_launch_triggerable
@@ -232,7 +230,11 @@ class ProcessTest < MiniTest::Unit::TestCase
     assert_equal ["ResqueJobsTree:Node:[\"tree1\",\"job2\"]"],
       Resque.redis.smembers("ResqueJobsTree:Node:[\"tree1\",\"job1\"]:childs")
     parents_hash = { 'ResqueJobsTree:Node:["tree1","job2"]'=>'ResqueJobsTree:Node:["tree1","job1"]' }
-    assert_equal parents_hash, Resque.redis.hgetall(ResqueJobsTree::Storage::PARENTS_KEY)
+    parent_key_storage_key ="#{ResqueJobsTree::Storage::PARENTS_KEY}:ResqueJobsTree:Node:[\"tree1\",\"job2\"]"
+    parent_key = 'ResqueJobsTree:Node:["tree1","job1"]'
+    assert_equal parent_key, Resque.redis.get(parent_key_storage_key)
+    assert_equal Resque.redis.keys.grep(/Parents/),
+      [parent_key_storage_key]
   end
 
   def test_triggerable_tree_with_fail

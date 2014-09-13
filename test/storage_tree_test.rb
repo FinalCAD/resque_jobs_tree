@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class StorageTreeTest < MiniTest::Unit::TestCase
+class StorageTreeTest < MiniTest::Test
 
 	def setup
 		create_tree

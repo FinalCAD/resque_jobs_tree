@@ -16,5 +16,4 @@ module ResqueJobsTree::Storage
   def redis
     Resque.redis
   end
-  
 end

@@ -12,14 +12,6 @@ $TESTING = true
 require 'mock_redis'
 Resque.redis = MockRedis.new
 
-def assert_not_raises
-  begin
-    yield
-    'ok'
-  rescue
-    raise
-  end
-end
 #
 # Fixtures
 #
@@ -40,7 +32,7 @@ end
 
 class ExpectedException < Exception ; end
 
-class MiniTest::Unit::TestCase
+class MiniTest::Test
 
   def setup
     Resque.inline = true

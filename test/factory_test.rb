@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class FactoryTest < MiniTest::Unit::TestCase
+class FactoryTest < MiniTest::Test
 
   def setup
     create_tree
@@ -23,16 +23,13 @@ class FactoryTest < MiniTest::Unit::TestCase
   end
 
   def test_without_perform
-    assert_not_raises do
-      ResqueJobsTree::Factory.create :tree_with_job_without_perform do
-        # root :job_without_perform, triggerable: true
-        root :job_without_perform do
-          perform { puts 'job1' }
-          childs { [:job1] }
-          node :job1 , triggerable: true
-        end
+    ResqueJobsTree::Factory.create :tree_with_job_without_perform do
+      # root :job_without_perform, triggerable: true
+      root :job_without_perform do
+        perform { puts 'job1' }
+        childs { [:job1] }
+        node :job1 , triggerable: true
       end
-    end.must_equal 'ok'
+    end
   end
-
 end

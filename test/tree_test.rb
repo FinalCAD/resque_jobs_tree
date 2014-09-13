@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class TreeTest < MiniTest::Unit::TestCase
+class TreeTest < MiniTest::Test
 
   def setup
     create_tree

@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class DefinitionsTest < MiniTest::Unit::TestCase
+class DefinitionsTest < MiniTest::Test
 
   def setup
     @tree = ResqueJobsTree::Definitions::Tree.new :tree1

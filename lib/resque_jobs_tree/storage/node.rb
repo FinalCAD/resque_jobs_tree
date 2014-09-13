@@ -3,7 +3,7 @@ module ResqueJobsTree::Storage::Node
 
   def store
     raise 'Can\'t store a root node' if root?
-		redis.hset PARENTS_KEY, key, parent.key
+		redis.setex parent_key_storage_key, 21_600, parent.key
 		unless redis.sadd parent.childs_key, key
 			raise ResqueJobsTree::JobNotUniq,
 				"Job #{parent.name} already has the child #{name} with resources: #{resources}"
@@ -12,15 +12,15 @@ module ResqueJobsTree::Storage::Node
 
   def unstore
 		redis.srem parent.childs_key, key
-		redis.hdel PARENTS_KEY, key
+		redis.del parent_key_storage_key
   end
 
   def cleanup
 		unless definition.leaf?
-			stored_childs.each &:cleanup
+			stored_childs.each(&:cleanup)
 			redis.del childs_key
 		end
-    redis.hdel PARENTS_KEY, key
+    redis.del parent_key_storage_key
     tree.unstore if root?
   end
 
@@ -55,7 +55,7 @@ module ResqueJobsTree::Storage::Node
     if definition.root?
       tree.exists?
     else
-      redis.exists(childs_key) || redis.hexists(PARENTS_KEY, key)
+      redis.exists(childs_key) || redis.exists(parent_key_storage_key)
     end
   end
 
@@ -72,11 +72,12 @@ module ResqueJobsTree::Storage::Node
   end
 
   def parent_key
-    redis.hget PARENTS_KEY, key
+    redis.get parent_key_storage_key
   end
 
   def node_info_from_key _key
-    tree_name, node_name, *resources_arguments = JSON.load(_key.gsub /ResqueJobsTree:Node:/, '')
+    tree_name, node_name, *resources_arguments =
+      JSON.load(_key.gsub /ResqueJobsTree:Node:/, '')
     _resources = ResqueJobsTree::ResourcesSerializer.instancize(resources_arguments)
 		[node_name, _resources]
   end
@@ -84,5 +85,8 @@ module ResqueJobsTree::Storage::Node
 	def main_arguments
 		[definition.tree.name, name]
 	end
-  
+
+  def parent_key_storage_key
+    @parent_key_storage_key ||= "#{PARENTS_KEY}:#{key}"
+  end
 end

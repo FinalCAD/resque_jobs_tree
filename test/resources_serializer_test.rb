@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class ResourcesSerializerTest < MiniTest::Unit::TestCase
+class ResourcesSerializerTest < MiniTest::Test
 
   def test_serialization_deserialization
     model = Model.new 42
