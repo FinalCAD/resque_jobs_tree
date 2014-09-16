@@ -15,7 +15,7 @@ class ResqueJobsTree::Definitions::Node < ResqueJobsTree::Definitions
       node.options = options
       @node_childs << node
       if block_given?
-        node.instance_eval &block
+        node.instance_eval(&block)
       elsif options.has_key? :triggerable
         node.perform {}
       end
@@ -49,7 +49,7 @@ class ResqueJobsTree::Definitions::Node < ResqueJobsTree::Definitions
   def find _name, first=true
     return self if name == _name.to_s
     node_childs.inject(nil){|result,node| result ||= node.find(_name, false) } ||
-      (first && raise(ResqueJobsTree::TreeDefinitionInvalid, "Cannot find node #{_name} in #{tree.name}"))
+      (first && raise(ResqueJobsTree::TreeDefinitionInvalid, "Cannot find node #{_name.inspect} in #{tree.name}"))
   end
 
   def validate!

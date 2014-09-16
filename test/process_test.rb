@@ -123,7 +123,6 @@ class ProcessTest < MiniTest::Test
     end
     run_resque_workers tree_definition.name
     assert_equal ['tree1 job2 perform','tree1 job2 on_failure', 'tree1 job1 perform'], redis.lrange('history', 0, -1)
-    redis.del 'history'
   end
 
   def test_root_failure
@@ -233,8 +232,10 @@ class ProcessTest < MiniTest::Test
     parent_key_storage_key ="#{ResqueJobsTree::Storage::PARENTS_KEY}:ResqueJobsTree:Node:[\"tree1\",\"job2\"]"
     parent_key = 'ResqueJobsTree:Node:["tree1","job1"]'
     assert_equal parent_key, Resque.redis.get(parent_key_storage_key)
-    assert_equal Resque.redis.keys.grep(/Parents/),
-      [parent_key_storage_key]
+    parent_keys =
+      [ "ResqueJobsTree:Node:Parents:ResqueJobsTree:Node:[\"tree1\",\"job2\"]",
+        "ResqueJobsTree:Node:Parents:ResqueJobsTree:Node:[\"tree1\",\"job3\"]"]
+    assert_equal parent_keys, Resque.redis.keys.grep(/Parents/)
   end
 
   def test_triggerable_tree_with_fail
@@ -297,11 +298,4 @@ class ProcessTest < MiniTest::Test
   def assert_redis_empty
     assert_equal [], Resque.keys
   end
-
-  # Inline mode is messy when dealing with on failure callbacks.
-  def run_resque_workers queue_name
-    Resque::Job.reserve(queue_name).perform
-    redis.srem 'queues', queue_name
-  end
-
 end

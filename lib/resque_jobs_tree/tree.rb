@@ -21,8 +21,7 @@ class ResqueJobsTree::Tree
       root.register
       enqueue_jobs
     else
-      raise ResqueJobsTree::JobNotUniq,
-        "Tree Definition must be uniq"
+      raise ResqueJobsTree::JobNotUniq, "Tree Definition must be uniq"
     end
   end
 
@@ -53,13 +52,13 @@ class ResqueJobsTree::Tree
     unstore
   end
 
-  private
-
   def enqueue_jobs
     @nodes.each do |leaf|
       leaf.enqueue unless leaf.definition.options[:triggerable]
     end
   end
+
+  private
 
   def run_callback callback
     callback = definition.send(callback)

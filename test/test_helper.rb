@@ -42,6 +42,7 @@ class MiniTest::Test
 
   def teardown
     redis.keys.each{ |key| redis.del key }
+    redis.del 'history'
   end
 
   def redis
@@ -102,5 +103,11 @@ class MiniTest::Test
     yield
   ensure
     $stdout = orig_stdout
+  end
+
+  # Inline mode is messy when dealing with on failure callbacks.
+  def run_resque_workers queue_name
+    Resque::Job.reserve(queue_name).perform
+    redis.srem 'queues', queue_name
   end
 end

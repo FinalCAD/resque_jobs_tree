@@ -88,6 +88,20 @@ class ResqueJobsTree::Node
     "<ResqueJobsTree::Node @name=#{name} @resources=#{resources}>"
   end
 
+  def relaunch_branch
+    register_finished_jobs
+    tree.enqueue_jobs
+  end
+
+  # TODO rename childs in children
+  def register_finished_jobs
+    if leaf?
+      tree.register_node self
+    else
+      stored_childs.each(&:register_finished_jobs)
+    end
+  end
+
   private
 
   def run_callback callback

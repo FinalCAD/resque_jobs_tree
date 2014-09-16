@@ -13,12 +13,10 @@ module ResqueJobsTree::Storage::Node
 		end
   end
 
-  # TODO rename store_finish
   def unstore
 		redis.srem parent.childs_key, key
 		redis.sadd parent.finished_childs_key, key
 		redis.expire parent.finished_childs_key, 21_600
-		redis.del parent_key_storage_key
   end
 
   def cleanup
@@ -49,7 +47,7 @@ module ResqueJobsTree::Storage::Node
   def stored_childs
     redis.sunion(childs_key, finished_childs_key).map do |_key|
       node_name, _resources = node_info_from_key _key
-      definition.find(node_name).spawn _resources
+      definition.find(node_name).spawn _resources, self
     end
   end
 

@@ -21,7 +21,9 @@ class StorageNodeTest < MiniTest::Test
 		assert_equal ['ResqueJobsTree:Node:["tree1","job2",1,2,3]'],
       redis.smembers(@root.childs_key)
 		@leaf.unstore
-		assert_parent_keys({})
+		assert_parent_keys(
+      'ResqueJobsTree:Node:Parents:ResqueJobsTree:Node:["tree1","job2",1,2,3]' =>
+        'ResqueJobsTree:Node:["tree1","job1",1,2,3]')
 		assert_equal [], redis.smembers(@root.childs_key)
 	end
 
