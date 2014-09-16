@@ -67,6 +67,14 @@ module ResqueJobsTree::Storage::Node
     end
   end
 
+  def currently_being_retried!
+    redis.set being_retried_key, true
+  end
+
+  def currently_being_retried?
+    redis.del(being_retried_key) == 1
+  end
+
 	private
 
   def lock
@@ -96,5 +104,9 @@ module ResqueJobsTree::Storage::Node
 
   def parent_key_storage_key
     @parent_key_storage_key ||= "#{PARENTS_KEY}:#{key}"
+  end
+
+  def being_retried_key
+    "#{key}:retry"
   end
 end

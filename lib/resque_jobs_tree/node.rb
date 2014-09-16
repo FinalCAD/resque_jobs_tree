@@ -25,6 +25,7 @@ class ResqueJobsTree::Node
   end
 
   def after_perform
+    return if currently_being_retried?
     run_callback :after_perform
     if root?
       tree.finish
@@ -89,6 +90,7 @@ class ResqueJobsTree::Node
   end
 
   def relaunch_branch
+    currently_being_retried!
     register_finished_jobs
     tree.enqueue_jobs
   end

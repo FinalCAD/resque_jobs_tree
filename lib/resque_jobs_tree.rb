@@ -21,6 +21,7 @@ module ResqueJobsTree
   class TreeDefinitionInvalid < Exception ; end
   class NodeDefinitionInvalid < Exception ; end
   class JobNotUniq            < Exception ; end
+  class RetryBranch           < Exception ; end
 
   def find name
     Factory.find name.to_s

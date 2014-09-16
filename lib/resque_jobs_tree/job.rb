@@ -3,7 +3,12 @@ class ResqueJobsTree::Job
   class << self
 
     def perform *args
-      node(*args).perform
+      node = node(*args)
+      begin
+        node.perform
+      rescue ResqueJobsTree::RetryBranch
+        node.relaunch_branch
+      end
     end
 
     protected
@@ -22,7 +27,8 @@ class ResqueJobsTree::Job
 
     def node tree_name, job_name, *resources_arguments
       node_definition = ResqueJobsTree.find(tree_name).find job_name
-      resources       = ResqueJobsTree::ResourcesSerializer.instancize resources_arguments
+      resources = 
+        ResqueJobsTree::ResourcesSerializer.instancize(resources_arguments)
       node = node_definition.spawn(resources)
       if node.exists?
         node
