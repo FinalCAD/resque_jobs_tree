@@ -28,10 +28,11 @@ module ResqueJobsTree
 
   def launch name, *resources
     tree_definition = find name
-    tree_definition ? tree_definition.spawn(resources).launch : raise("Can't find tree `#{name}`")
+    raise("Can't find tree `#{name}`") unless tree_definition
+    tree_definition.spawn(resources).launch
   end
 
   def create *resources
-    Factory.create *resources
+    Factory.create(*resources)
   end
 end

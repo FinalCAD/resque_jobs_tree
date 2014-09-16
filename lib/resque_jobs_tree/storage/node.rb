@@ -4,12 +4,16 @@ module ResqueJobsTree::Storage::Node
   def store
     raise 'Can\'t store a root node' if root?
 		redis.setex parent_key_storage_key, 21_600, parent.key
-		unless redis.sadd parent.childs_key, key
+		if redis.sadd parent.childs_key, key
+		  redis.expire parent.childs_key, 21_600
+    else
 			raise ResqueJobsTree::JobNotUniq,
-				"Job #{parent.name} already has the child #{name} with resources: #{resources}"
+				"Job #{parent.name} already has the child #{name} with resources:"\
+        "#{resources}"
 		end
   end
 
+  # TODO rename store_finish
   def unstore
 		redis.srem parent.childs_key, key
 		redis.sadd parent.finished_childs_key, key

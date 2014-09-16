@@ -1,8 +1,11 @@
 module ResqueJobsTree::Storage::Tree
 	include ResqueJobsTree::Storage
 
+  # TODO 21_600 in config
   def store
-    redis.sadd LAUNCHED_TREES, key
+    redis.sadd(LAUNCHED_TREES, key).tap do
+		  redis.expire LAUNCHED_TREES, 21_600
+    end
   end
 
   def unstore
@@ -26,5 +29,4 @@ module ResqueJobsTree::Storage::Tree
 	def main_arguments
 		[name]
 	end
-  
 end
