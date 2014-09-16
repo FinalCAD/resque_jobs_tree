@@ -28,6 +28,7 @@ class ResqueJobsTree::Node
     run_callback :after_perform
     if root?
       tree.finish
+      cleanup
     else
       lock do
         parent.enqueue if only_stored_child?

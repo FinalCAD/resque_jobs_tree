@@ -80,7 +80,8 @@ class StorageNodeTest < MiniTest::Test
 		leaf2 = @tree_definition.find(:job2).spawn resources2, @root
     leaf2.store
 		assert_equal %w(job2 job2), @root.stored_childs.map(&:name)
-		assert_equal [[4,5,6],[1,2,3]], @root.stored_childs.map(&:resources)
+		assert_equal [[4,5,6],[1,2,3]].sort,
+      @root.stored_childs.map(&:resources).sort
 	end
 
 	def test_node_info_from_key
@@ -105,6 +106,21 @@ class StorageNodeTest < MiniTest::Test
     assert !root.exists?, 'root not registred'
     redis.sadd ResqueJobsTree::Storage::LAUNCHED_TREES, root.tree.key
     assert root.exists?, 'root with tree registred'
+  end
+
+  def test_store_finished_childs
+    create_tree_and_register_its_nodes
+    leaf = @tree_definition.find(:job2).spawn([2])
+    leaf.unstore
+    finished_childs_key =
+      "ResqueJobsTree:Node:[\"tree1\",\"job1\"]:finished_childs"
+    assert_equal [leaf.key], redis.smembers(finished_childs_key)
+    stored_childs_key = ["ResqueJobsTree:Node:[\"tree1\",\"job2\",0]",
+                         "ResqueJobsTree:Node:[\"tree1\",\"job2\",1]",
+                         "ResqueJobsTree:Node:[\"tree1\",\"job2\",2]"]
+    assert_equal stored_childs_key, leaf.parent.stored_childs.map(&:key)
+    @tree.root.cleanup
+    assert_equal [], redis.keys
   end
 
 	private
@@ -148,5 +164,4 @@ class StorageNodeTest < MiniTest::Test
 		@spawn4 = @tree_definition.find(:job3).spawn [2], @spawn2
 		[@tree, @spawn2, @spawn3, @spawn4].each(&:store)
 	end
-
 end

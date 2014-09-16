@@ -70,6 +70,13 @@ class MiniTest::Test
     end
   end
 
+  def create_tree_and_register_its_nodes
+    create_tree
+    @tree = @tree_definition.spawn([])
+    @tree.store
+    @tree.root.register
+  end
+
   def create_nested_tree_with_job_failure
     @tree_definition = ResqueJobsTree::Factory.create :tree1 do
       root :job1 do
@@ -96,5 +103,4 @@ class MiniTest::Test
   ensure
     $stdout = orig_stdout
   end
-
 end
