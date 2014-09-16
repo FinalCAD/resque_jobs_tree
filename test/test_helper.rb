@@ -55,10 +55,10 @@ class MiniTest::Test
         perform do |*args|
           Resque.redis.rpush 'history', 'tree1 job1'
         end
-        childs do |resources|
-          [].tap do |childs|
+        children do |resources|
+          [].tap do |children|
             3.times do |n|
-              childs << [:job2, n]
+              children << [:job2, n]
             end
           end
         end
@@ -82,10 +82,10 @@ class MiniTest::Test
     @tree_definition = ResqueJobsTree::Factory.create :tree1 do
       root :job1 do
         perform { raise ExpectedException, 'job1' }
-        childs { [ [:job2] ] }
+        children { [ [:job2] ] }
         node :job2, continue_on_failure: true do
           perform { raise 'job2' }
-          childs { [ [:job3], [:job4] ] }
+          children { [ [:job3], [:job4] ] }
           node :job3, triggerable: true do
             perform {}
           end

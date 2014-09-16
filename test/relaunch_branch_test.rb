@@ -56,7 +56,7 @@ class RelaunchBranchTest < MiniTest::Test
         perform do |*args|
           Resque.redis.rpush 'history', 'tree1 job1'
         end
-        childs do |resources|
+        children do |resources|
           [[:job2, nil]]
         end
         node :job2 do
@@ -79,7 +79,7 @@ class RelaunchBranchTest < MiniTest::Test
             Resque.redis.rpush 'history', 'tree1 job1 ok'
           end
         end
-        childs do |resources|
+        children do |resources|
           [[:job2]]
         end
         node :job2 do

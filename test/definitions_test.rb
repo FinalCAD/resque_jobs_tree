@@ -7,7 +7,7 @@ class DefinitionsTest < MiniTest::Test
     @root = ResqueJobsTree::Definitions::Node.new :node1, @tree
     @tree.root = @root
     @leaf = ResqueJobsTree::Definitions::Node.new :node2, @tree, @root
-    @root.node_childs = [@leaf]
+    @root.node_children = [@leaf]
   end
 
   def test_perform
@@ -19,12 +19,12 @@ class DefinitionsTest < MiniTest::Test
     assert_equal variable, 2
   end
 
-  def test_childs
+  def test_children
     variable = 1
-    @leaf.childs do |n|
+    @leaf.children do |n|
       variable = n
     end
-    @leaf.childs.call 2
+    @leaf.children.call 2
     assert_equal variable, 2
   end
 
@@ -48,12 +48,12 @@ class DefinitionsTest < MiniTest::Test
     assert @leaf.siblings, [node3]
   end
 
-  def test_childs_validation
+  def test_children_validation
     assert_raises ResqueJobsTree::NodeDefinitionInvalid do
       ResqueJobsTree::Factory.create :tree1 do
         root :job1 do
           perform {}
-          childs {}
+          children {}
         end
       end
     end
@@ -78,7 +78,7 @@ class DefinitionsTest < MiniTest::Test
       ResqueJobsTree::Factory.create :tree1 do
         root :job1 do
           perform {}
-          childs {}
+          children {}
           node :job2 do
             perform {}
           end
@@ -100,7 +100,7 @@ class DefinitionsTest < MiniTest::Test
     tree_definition = ResqueJobsTree::Factory.create :tree1 do
       root :job1 do
         perform {}
-        childs { [:job4] }
+        children { [:job4] }
         node :job2 do
           perform {}
         end
