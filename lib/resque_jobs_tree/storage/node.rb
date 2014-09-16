@@ -68,7 +68,7 @@ module ResqueJobsTree::Storage::Node
   end
 
   def currently_being_retried!
-    redis.set being_retried_key, true
+    redis.setex being_retried_key, 21_600, true
   end
 
   def currently_being_retried?
