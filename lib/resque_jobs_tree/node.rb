@@ -5,7 +5,7 @@ class ResqueJobsTree::Node
   attr_reader :resources, :definition, :tree
 
   def initialize definition, resources, parent=nil, tree=nil
-    @childs     = []
+    @children     = []
     @definition = definition
     @resources  = resources
     @parent     = parent
@@ -25,9 +25,11 @@ class ResqueJobsTree::Node
   end
 
   def after_perform
+    return if currently_being_retried?
     run_callback :after_perform
     if root?
       tree.finish
+      cleanup
     else
       lock do
         parent.enqueue if only_stored_child?
@@ -55,7 +57,7 @@ class ResqueJobsTree::Node
   end
 
   def leaf?
-    childs.empty?
+    children.empty?
   end
 
   def root?
@@ -66,9 +68,9 @@ class ResqueJobsTree::Node
     @root ||= root? ? self : parent.root
   end
 
-  def childs
-    return @childs unless @childs.empty?
-    @childs = definition.leaf? ?  [] : definition.childs.call(*resources)
+  def children
+    return @children unless @children.empty?
+    @children = definition.leaf? ?  [] : definition.children.call(*resources)
   end
 
   def register
@@ -76,7 +78,7 @@ class ResqueJobsTree::Node
     if leaf?
       tree.register_node self
     else
-      childs.each do |node_name, *resources|
+      children.each do |node_name, *resources|
         node = definition.find(node_name).spawn resources, self
         node.register
       end
@@ -85,6 +87,20 @@ class ResqueJobsTree::Node
 
   def inspect
     "<ResqueJobsTree::Node @name=#{name} @resources=#{resources}>"
+  end
+
+  def relaunch_branch
+    currently_being_retried!
+    register_finished_jobs
+    tree.enqueue_jobs
+  end
+
+  def register_finished_jobs
+    if leaf?
+      tree.register_node self
+    else
+      stored_children.each(&:register_finished_jobs)
+    end
   end
 
   private

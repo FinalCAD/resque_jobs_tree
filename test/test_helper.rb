@@ -42,6 +42,7 @@ class MiniTest::Test
 
   def teardown
     redis.keys.each{ |key| redis.del key }
+    redis.del 'history'
   end
 
   def redis
@@ -54,10 +55,10 @@ class MiniTest::Test
         perform do |*args|
           Resque.redis.rpush 'history', 'tree1 job1'
         end
-        childs do |resources|
-          [].tap do |childs|
+        children do |resources|
+          [].tap do |children|
             3.times do |n|
-              childs << [:job2, n]
+              children << [:job2, n]
             end
           end
         end
@@ -70,14 +71,21 @@ class MiniTest::Test
     end
   end
 
+  def create_tree_and_register_its_nodes
+    create_tree
+    @tree = @tree_definition.spawn([])
+    @tree.store
+    @tree.root.register
+  end
+
   def create_nested_tree_with_job_failure
     @tree_definition = ResqueJobsTree::Factory.create :tree1 do
       root :job1 do
         perform { raise ExpectedException, 'job1' }
-        childs { [ [:job2] ] }
+        children { [ [:job2] ] }
         node :job2, continue_on_failure: true do
           perform { raise 'job2' }
-          childs { [ [:job3], [:job4] ] }
+          children { [ [:job3], [:job4] ] }
           node :job3, triggerable: true do
             perform {}
           end
@@ -97,4 +105,9 @@ class MiniTest::Test
     $stdout = orig_stdout
   end
 
+  # Inline mode is messy when dealing with on failure callbacks.
+  def run_resque_workers queue_name
+    Resque::Job.reserve(queue_name).perform
+    redis.srem 'queues', queue_name
+  end
 end

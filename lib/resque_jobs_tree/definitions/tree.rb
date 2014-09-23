@@ -12,7 +12,7 @@ class ResqueJobsTree::Definitions::Tree < ResqueJobsTree::Definitions
 
   def root name=nil, &block
     @root ||= Node.new(name, self).tap do |root|
-      root.instance_eval &block if block_given?
+      root.instance_eval(&block) if block_given?
     end
   end
 
@@ -35,5 +35,4 @@ class ResqueJobsTree::Definitions::Tree < ResqueJobsTree::Definitions
   def inspect
     "<ResqueJobsTree::Definitions::Tree @name=#{name}>"
   end
-
 end

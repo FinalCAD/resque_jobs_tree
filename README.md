@@ -24,7 +24,7 @@ Organise each sequences of jobs into a single file
         perform do |*args|
           # your code goes here...
         end
-        childs do |resources|
+        children do |resources|
           user = resources.first
           [].tap do |jobs|
             jobs << [:my_fetch_on_an_outside_slowish_api, user.company, user.group]

@@ -27,7 +27,7 @@ class FactoryTest < MiniTest::Test
       # root :job_without_perform, triggerable: true
       root :job_without_perform do
         perform { puts 'job1' }
-        childs { [:job1] }
+        children { [:job1] }
         node :job1 , triggerable: true
       end
     end

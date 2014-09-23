@@ -21,6 +21,7 @@ module ResqueJobsTree
   class TreeDefinitionInvalid < Exception ; end
   class NodeDefinitionInvalid < Exception ; end
   class JobNotUniq            < Exception ; end
+  class RetryBranch           < Exception ; end
 
   def find name
     Factory.find name.to_s
@@ -28,10 +29,11 @@ module ResqueJobsTree
 
   def launch name, *resources
     tree_definition = find name
-    tree_definition ? tree_definition.spawn(resources).launch : raise("Can't find tree `#{name}`")
+    raise("Can't find tree `#{name}`") unless tree_definition
+    tree_definition.spawn(resources).launch
   end
 
   def create *resources
-    Factory.create *resources
+    Factory.create(*resources)
   end
 end

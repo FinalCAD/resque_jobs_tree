@@ -1,21 +1,21 @@
 class ResqueJobsTree::Definitions::Node < ResqueJobsTree::Definitions
 
-  attr_accessor :tree, :parent, :name, :node_childs, :options
+  attr_accessor :tree, :parent, :name, :node_children, :options
 
   def initialize name, tree, parent=nil
     @tree        = tree
     @name        = name.to_s
     @parent      = parent
-    @node_childs = []
+    @node_children = []
     @options     = {}
   end
 
   def node name, options={}, &block
     ResqueJobsTree::Definitions::Node.new(name, tree, self).tap do |node|
       node.options = options
-      @node_childs << node
+      @node_children << node
       if block_given?
-        node.instance_eval &block
+        node.instance_eval(&block)
       elsif options.has_key? :triggerable
         node.perform {}
       end
@@ -26,8 +26,8 @@ class ResqueJobsTree::Definitions::Node < ResqueJobsTree::Definitions
 		ResqueJobsTree::Node.new self, resources, parent
 	end
 
-  def childs &block
-    @childs ||= block
+  def children &block
+    @children ||= block
   end
 
 	def perform &block
@@ -35,7 +35,7 @@ class ResqueJobsTree::Definitions::Node < ResqueJobsTree::Definitions
 	end
 
   def leaf?
-		@node_childs.empty?
+		@node_children.empty?
   end
 
   def root?
@@ -43,24 +43,24 @@ class ResqueJobsTree::Definitions::Node < ResqueJobsTree::Definitions
   end
 
   def siblings
-    root? ? [] : (parent.node_childs - [self])
+    root? ? [] : (parent.node_children - [self])
   end
 
   def find _name, first=true
     return self if name == _name.to_s
-    node_childs.inject(nil){|result,node| result ||= node.find(_name, false) } ||
-      (first && raise(ResqueJobsTree::TreeDefinitionInvalid, "Cannot find node #{_name} in #{tree.name}"))
+    node_children.inject(nil){|result,node| result ||= node.find(_name, false) } ||
+      (first && raise(ResqueJobsTree::TreeDefinitionInvalid, "Cannot find node #{_name.inspect} in #{tree.name}"))
   end
 
   def validate!
-    # Should have a child's naming [:job1, ...] and node childs Proc implementation associated
+    # Should have a child's naming [:job1, ...] and node children Proc implementation associated
     # node :job1 do
     #  perform {}
     # end
     # ...
-    if (childs.kind_of?(Proc) && node_childs.empty?) || (childs.nil? && !node_childs.empty?)
+    if (children.kind_of?(Proc) && node_children.empty?) || (children.nil? && !node_children.empty?)
       raise ResqueJobsTree::NodeDefinitionInvalid,
-        "node `#{name}` from tree `#{tree.name}` should defines childs and child nodes"
+        "node `#{name}` from tree `#{tree.name}` should defines children and child nodes"
     end
 
     # Should have an implementation
@@ -79,11 +79,11 @@ class ResqueJobsTree::Definitions::Node < ResqueJobsTree::Definitions
     end
 
     # Recursive call for validate all of tree
-    node_childs.each &:validate!
+    node_children.each &:validate!
   end
 
   def nodes
-    node_childs+node_childs.map(&:nodes)
+    node_children+node_children.map(&:nodes)
   end
 
   def inspect
